@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}Cara a Cara · Sala {{ code }}{% endblock %}
+{% block body_class %}page-room{% endblock %}
+{% block body_attrs %} data-code="{{ code }}"{% endblock %}
+{% block content %}
+<div id="conn-status" class="conn-status" role="status" aria-live="polite" hidden></div>
+
+<main id="conteudo">
+  <!-- Carregando -->
+  <section id="view-loading" class="view view-loading">
+    <div class="loading-box">
+      <img class="brand-logo spin-soft" src="/static/img/logo.svg" alt="" width="64" height="64">
+      <p id="loading-text">Entrando na sala {{ code }}…</p>
+    </div>
+  </section>
+
+  <!-- ============ LOBBY ============ -->
+  <section id="view-lobby" class="view view-lobby" hidden>
+    <header class="lobby-header wrap">
+      <a class="brand" href="/" aria-label="Cara a Cara, voltar ao início">
+        <img class="brand-logo" src="/static/img/logo.svg" alt="" width="40" height="40">
+        <span class="brand-name brand-name-sm">Cara a Cara</span>
+      </a>
+      <div class="code-box">
+        <span class="code-label">Código da sala</span>
+        <span class="code-value" id="lobby-code">{{ code }}</span>
+        <button type="button" id="copy-link" class="btn btn-white btn-sm">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"></path><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"></path></svg>
+          Copiar link
+        </button>
+      </div>
+    </header>
+
+    <div class="wrap lobby-title-row">
+      <h1 id="lobby-room-name" class="lobby-room-name">Sala {{ code }}</h1>
+      <span id="lobby-host-note" class="muted-strong"></span>
+    </div>
+
+    <div class="wrap mode-row">
+      <span class="mode-label" id="mode-label">Modo de jogo</span>
+      <div class="segmented" role="radiogroup" aria-labelledby="mode-label">
+        <button type="button" role="radio" id="mode-duel" class="seg-btn" aria-checked="false">Duelo 1x1</button>
+        <button type="button" role="radio" id="mode-team" class="seg-btn" aria-checked="false">Time x Time</button>
+      </div>
+      <span class="mode-hint" id="mode-hint"></span>
+    </div>
+
+    <div class="wrap lobby-grid">
+      <div class="lobby-main">
+        <div class="sides">
+          <section class="side-col" data-side="A" aria-labelledby="side-name-A">
+            <div class="side-col-head">
+              <h2 id="side-name-A" class="side-title side-title-A">Time Amarelo</h2>
+              <span id="side-count-A" class="side-count"></span>
+            </div>
+            <ul id="side-list-A" class="member-list"></ul>
+            <button type="button" id="join-A" class="btn-dashed btn-dashed-A">Entrar no Time Amarelo</button>
+          </section>
+          <section class="side-col" data-side="B" aria-labelledby="side-name-B">
+            <div class="side-col-head">
+              <h2 id="side-name-B" class="side-title side-title-B">Time Coral</h2>
+              <span id="side-count-B" class="side-count"></span>
+            </div>
+            <ul id="side-list-B" class="member-list"></ul>
+            <button type="button" id="join-B" class="btn-dashed btn-dashed-B">Entrar no Time Coral</button>
+          </section>
+          <section class="side-col side-col-obs" aria-labelledby="obs-title">
+            <div class="side-col-head">
+              <h2 id="obs-title" class="side-title side-title-obs">Observadores</h2>
+              <span id="obs-count" class="side-count"></span>
+            </div>
+            <ul id="obs-list" class="member-list member-list-compact"></ul>
+            <button type="button" id="join-obs" class="btn-dashed btn-dashed-obs">Virar observador</button>
+            <p id="obs-hint" class="small-note">Quem não escolhe lado assiste aos dois tabuleiros. O chat dos observadores não chega aos jogadores.</p>
+          </section>
+        </div>
+
+        <form id="settings-form" class="card settings" novalidate>
+          <div class="field settings-theme">
+            <div class="label-row">
+              <label for="set-theme">Tema dos personagens</label>
+              <a href="/temas/novo" target="_blank" rel="noopener" class="link-dark">Criar tema<span class="sr-only"> (abre em nova aba)</span></a>
+            </div>
+            <select id="set-theme" class="input select"></select>
+          </div>
+          <div class="field settings-turn">
+            <label for="set-turn">Tempo por vez</label>
+            <select id="set-turn" class="input select">
+              <option value="30">30 segundos</option>
+              <option value="45">45 segundos</option>
+              <option value="60">60 segundos</option>
+              <option value="90">90 segundos</option>
+            </select>
+          </div>
+          <div class="field settings-best" id="best-field">
+            <label for="set-best">Partidas</label>
+            <select id="set-best" class="input select">
+              <option value="1">Partida única</option>
+              <option value="3">Melhor de 3</option>
+              <option value="5">Melhor de 5</option>
+            </select>
+          </div>
+          <div class="field settings-public">
+            <span class="field-label" id="public-label">Visibilidade</span>
+            <label class="switch">
+              <input type="checkbox" id="set-public" aria-describedby="public-label">
+              <span class="switch-track" aria-hidden="true"></span>
+              <span>Sala pública</span>
+            </label>
+          </div>
+          <div class="settings-start">
+            <button type="button" id="start-btn" class="btn btn-primary btn-xl btn-block">Começar</button>
+            <span id="start-hint" class="small-note small-note-dark"></span>
+          </div>
+        </form>
+      </div>
+
+      <aside class="lobby-chat panel-white" aria-label="Chat da sala">
+        <div class="chat-slot" id="slot-lobby"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ PARTIDA (JOGADOR) ============ -->
+  <section id="view-game" class="view view-game" hidden>
+    <header class="game-header">
+      <a href="/" class="brand-mini" aria-label="Voltar ao início">
+        <img class="brand-logo" src="/static/img/logo.svg" alt="" width="40" height="40">
+      </a>
+      <div class="room-title">
+        <span class="room-title-name" id="g-room-name"></span>
+        <span class="room-title-sub" id="g-room-sub"></span>
+      </div>
+      <div class="banner-wrap">
+        <div id="g-banner" class="status-banner" role="status" aria-live="polite"></div>
+      </div>
+      <span id="g-match-n" class="match-n"></span>
+      <div class="timer" id="g-timer" role="timer" aria-live="off">
+        <svg viewBox="0 0 60 60" aria-hidden="true"><circle class="timer-bg" cx="30" cy="30" r="26"></circle><circle class="timer-fg" cx="30" cy="30" r="26"></circle></svg>
+        <span class="timer-num">–</span>
+      </div>
+    </header>
+
+    <div class="game-layout">
+      <aside class="game-info panel" aria-label="Placar e times">
+        <div class="score-box" aria-label="Placar">
+          <span class="score-name score-name-A" id="g-score-name-A">Amarelo</span>
+          <span class="score-num" id="g-score">0 x 0</span>
+          <span class="score-name score-name-B" id="g-score-name-B">Coral</span>
+        </div>
+        <h2 class="h-sm" id="g-secret-title">Segredo do seu time</h2>
+        <figure class="secret-card" id="g-secret">
+          <img alt="" width="200" height="200">
+          <figcaption></figcaption>
+        </figure>
+        <p class="small-note">O outro lado tenta adivinhar este personagem. Responda as perguntas sobre ele.</p>
+        <div id="g-teams" class="team-lists"></div>
+        <span id="g-watchers" class="small-note"></span>
+      </aside>
+
+      <section class="game-board" aria-label="Tabuleiro">
+        <div id="g-answer" class="answer-panel" hidden>
+          <p class="answer-kicker" id="g-answer-who"></p>
+          <p class="answer-q" id="g-answer-q"></p>
+          <div class="answer-btns">
+            <button type="button" class="btn btn-yes btn-xl" id="ans-yes">SIM</button>
+            <button type="button" class="btn btn-no btn-xl" id="ans-no">NÃO</button>
+          </div>
+          <p class="answer-hint">Responda sobre o segredo do seu time: <strong id="g-answer-secret"></strong></p>
+        </div>
+        <div id="g-guessbar" class="guess-bar" hidden>
+          <span>Modo chute: clique no personagem que você acha que é o segredo do outro lado.</span>
+          <button type="button" class="btn btn-white btn-sm" id="guess-cancel">Cancelar</button>
+        </div>
+        <div class="board-head">
+          <span id="g-remaining" class="board-hint"></span>
+          <button type="button" id="g-unflip" class="btn btn-ghost btn-sm">Desvirar todas</button>
+        </div>
+        <div id="g-board" class="board" role="group" aria-label="Personagens"></div>
+      </section>
+
+      <aside class="game-panel panel-white" aria-label="Perguntas e chat">
+        <div class="tabs" role="tablist" aria-label="Painel">
+          <button type="button" role="tab" class="tab" id="g-tabbtn-log" aria-controls="g-tab-log" aria-selected="true">Perguntas</button>
+          <button type="button" role="tab" class="tab" id="g-tabbtn-chat" aria-controls="g-tab-chat" aria-selected="false">Chat do time <span class="unread" id="g-unread" hidden></span></button>
+        </div>
+        <div id="g-tab-log" role="tabpanel" aria-labelledby="g-tabbtn-log" class="tabpanel">
+          <ol id="g-log" class="log" aria-live="polite"></ol>
+        </div>
+        <div id="g-tab-chat" role="tabpanel" aria-labelledby="g-tabbtn-chat" class="tabpanel chat-slot" hidden></div>
+        <form id="ask-form" class="ask-form" novalidate>
+          <label for="ask-input" id="ask-label">Sua pergunta</label>
+          <div class="input-row">
+            <input id="ask-input" class="input" maxlength="140" autocomplete="off" placeholder="Seu personagem usa chapéu?">
+            <button type="submit" class="btn-icon btn-icon-dark" id="ask-send" aria-label="Enviar pergunta">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </button>
+          </div>
+        </form>
+        <button type="button" id="guess-btn" class="btn btn-primary btn-lg btn-block">Chutar personagem</button>
+        <span class="small-note small-note-dark center">Cuidado: chute errado perde a partida.</span>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ OBSERVADOR ============ -->
+  <section id="view-spec" class="view view-spec" hidden>
+    <header class="game-header">
+      <a href="/" class="brand-mini" aria-label="Voltar ao início">
+        <img class="brand-logo" src="/static/img/logo.svg" alt="" width="40" height="40">
+      </a>
+      <div class="room-title">
+        <span class="room-title-name" id="s-room-name"></span>
+        <span class="room-title-sub" id="s-room-sub"></span>
+      </div>
+      <div class="banner-wrap">
+        <div class="score-pill" aria-label="Placar">
+          <span class="score-name-A" id="s-score-name-A">Time Amarelo</span>
+          <span class="score-num" id="s-score">0 x 0</span>
+          <span class="score-name-B" id="s-score-name-B">Time Coral</span>
+        </div>
+      </div>
+      <span id="s-queue" class="queue-pill" hidden></span>
+      <div class="timer" id="s-timer" role="timer" aria-live="off">
+        <svg viewBox="0 0 60 60" aria-hidden="true"><circle class="timer-bg" cx="30" cy="30" r="26"></circle><circle class="timer-fg" cx="30" cy="30" r="26"></circle></svg>
+        <span class="timer-num">–</span>
+      </div>
+    </header>
+    <div id="s-banner" class="spec-banner" role="status" aria-live="polite"></div>
+
+    <div class="spec-layout">
+      <section class="spec-board" data-side="A" aria-labelledby="s-name-A">
+        <div class="spec-head">
+          <figure class="spec-secret" id="s-secret-A"><img alt="" width="56" height="56"><figcaption></figcaption></figure>
+          <div class="spec-head-text">
+            <h2 class="spec-name" id="s-name-A">Time Amarelo</h2>
+            <span class="spec-members" id="s-members-A"></span>
+            <span class="spec-status" id="s-status-A"></span>
+          </div>
+        </div>
+        <div class="mini-board" id="s-board-A"></div>
+      </section>
+      <section class="spec-board" data-side="B" aria-labelledby="s-name-B">
+        <div class="spec-head">
+          <figure class="spec-secret" id="s-secret-B"><img alt="" width="56" height="56"><figcaption></figcaption></figure>
+          <div class="spec-head-text">
+            <h2 class="spec-name" id="s-name-B">Time Coral</h2>
+            <span class="spec-members" id="s-members-B"></span>
+            <span class="spec-status" id="s-status-B"></span>
+          </div>
+        </div>
+        <div class="mini-board" id="s-board-B"></div>
+      </section>
+
+      <aside class="spec-panel panel-white" aria-label="Chat e perguntas">
+        <div class="tabs" role="tablist" aria-label="Painel">
+          <button type="button" role="tab" class="tab" id="s-tabbtn-chat" aria-controls="s-tab-chat" aria-selected="true">Chat <span class="unread" id="s-unread" hidden></span></button>
+          <button type="button" role="tab" class="tab" id="s-tabbtn-log" aria-controls="s-tab-log" aria-selected="false">Perguntas</button>
+        </div>
+        <div id="s-tab-chat" role="tabpanel" aria-labelledby="s-tabbtn-chat" class="tabpanel chat-slot"></div>
+        <div id="s-tab-log" role="tabpanel" aria-labelledby="s-tabbtn-log" class="tabpanel" hidden>
+          <ol id="s-log" class="log" aria-live="polite"></ol>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<!-- Chat (movido para o painel da visão ativa) -->
+<div id="chat-box" class="chat">
+  <h2 class="chat-title" id="chat-title">Chat da sala</h2>
+  <ol id="chat-list" class="chat-list" aria-live="polite" aria-labelledby="chat-title"></ol>
+  <form id="chat-form" class="chat-form" novalidate>
+    <label for="chat-input" id="chat-label">Mensagem</label>
+    <div class="input-row">
+      <input id="chat-input" class="input" maxlength="200" autocomplete="off" placeholder="Diga oi para a sala">
+      <button type="submit" class="btn-icon btn-icon-dark" aria-label="Enviar mensagem">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: apelido -->
+<dialog id="name-dialog" class="dialog" aria-labelledby="name-title">
+  <form id="name-form" class="dialog-body" method="dialog" novalidate>
+    <h2 id="name-title" class="dialog-title">Como você quer ser chamado?</h2>
+    <p class="dialog-text">Você vai entrar na sala <strong>{{ code }}</strong>.</p>
+    <div class="field">
+      <label for="name-input">Seu apelido</label>
+      <input id="name-input" class="input input-lg" maxlength="20" autocomplete="nickname" required>
+    </div>
+    <div class="field">
+      <span class="field-label">Cor do avatar</span>
+      <div class="swatches" id="name-colors" aria-label="Cor do avatar"></div>
+    </div>
+    <p class="form-error" id="name-error" role="alert"></p>
+    <button type="submit" class="btn btn-primary btn-lg btn-block">Entrar na sala</button>
+  </form>
+</dialog>
+
+<!-- Modal: confirmar chute -->
+<dialog id="guess-dialog" class="dialog" aria-labelledby="guess-title">
+  <form class="dialog-body center" method="dialog">
+    <h2 id="guess-title" class="dialog-title">Chutar este personagem?</h2>
+    <figure class="secret-card secret-card-coral" id="guess-pick"><img alt="" width="160" height="160"><figcaption></figcaption></figure>
+    <p class="dialog-text">Se errar, o outro lado vence a partida.</p>
+    <div class="btn-row-2">
+      <button type="submit" value="cancel" class="btn btn-outline-dark btn-lg">Cancelar</button>
+      <button type="submit" value="ok" class="btn btn-primary btn-lg" id="guess-confirm">Chutar!</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Modal: fim de partida -->
+<dialog id="result-dialog" class="dialog dialog-result" aria-labelledby="result-title">
+  <div class="dialog-body center">
+    <p class="result-kicker" id="result-kicker"></p>
+    <h2 id="result-title" class="result-title"></h2>
+    <p class="result-reason" id="result-reason"></p>
+    <div class="result-score" id="result-score"></div>
+    <div class="reveal">
+      <figure class="reveal-card" id="reveal-A"><span class="reveal-label"></span><img alt="" width="140" height="140"><figcaption></figcaption></figure>
+      <figure class="reveal-card" id="reveal-B"><span class="reveal-label"></span><img alt="" width="140" height="140"><figcaption></figcaption></figure>
+    </div>
+    <div class="result-actions">
+      <button type="button" class="btn btn-primary btn-lg" id="next-match">Próxima partida</button>
+      <button type="button" class="btn btn-dark btn-lg" id="back-lobby">Voltar ao lobby</button>
+      <p class="wait-host" id="wait-host">Aguardando o anfitrião…</p>
+      <button type="button" class="btn btn-outline-dark btn-sm" id="result-close">Ver tabuleiro</button>
+    </div>
+  </div>
+</dialog>
+<button type="button" id="result-reopen" class="result-reopen btn btn-yellow" hidden>Ver resultado</button>
+{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/room.js"></script>{% endblock %}
