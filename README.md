@@ -7,11 +7,28 @@ com salas no estilo Gartic. Visual e personagens 100% originais.
 
 Requisitos: Docker e Docker Compose.
 
+Usuário, senha e nome do banco (e a porta) ficam num arquivo `.env`, que **não vai para o git**.
+O modelo é o `.env.example`.
+
+**Desenvolvimento**
+
 ```bash
+cp .env.example .env        # ajuste a senha se quiser
 docker compose up --build
 ```
 
-Abra http://localhost:8000. O compose sobe dois serviços:
+**Produção**
+
+```bash
+cp .env.example .env.prod   # use uma senha forte, ex.: openssl rand -base64 24
+docker compose --env-file .env.prod up -d --build
+```
+
+Se alguma variável obrigatória faltar, o compose para com a mensagem `defina ... no .env`.
+Atenção: o Postgres só usa a senha ao criar o volume `pgdata` pela primeira vez; para trocar
+a senha depois, altere-a no banco ou recrie o volume (`docker compose down -v` apaga os dados).
+
+Abra http://localhost:8000 (ou a `APP_PORT` definida). O compose sobe dois serviços:
 
 - `app` — FastAPI + Uvicorn (1 worker) na porta 8000; imagens dos temas ficam no volume `uploads`.
 - `db` — PostgreSQL 16 (volume `pgdata`), usado para guardar os temas customizados.

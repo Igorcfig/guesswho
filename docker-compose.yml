@@ -1,10 +1,13 @@
+# Credenciais e portas vêm de um arquivo .env (nunca commitado).
+#   Dev:  cp .env.example .env            && docker compose up --build
+#   Prod: cp .env.example .env.prod (edite) && docker compose --env-file .env.prod up -d --build
 services:
   app:
     build: .
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://cara:cara@db:5432/cara
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?defina POSTGRES_USER no .env}:${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}@db:5432/${POSTGRES_DB:?defina POSTGRES_DB no .env}
       UPLOAD_DIR: /data/uploads
     volumes:
       - uploads:/data/uploads
@@ -16,13 +19,14 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: cara
-      POSTGRES_PASSWORD: cara
-      POSTGRES_DB: cara
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cara -d cara"]
+      # $$ evita a interpolação do compose: as variáveis são lidas dentro do container.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
