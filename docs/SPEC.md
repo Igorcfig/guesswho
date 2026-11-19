@@ -187,3 +187,7 @@ Decisões tomadas onde o SPEC era omisso (o contrato acima não muda):
   expiram após 10 min.
 - **Erros HTTP** genéricos (404/405/validação do FastAPI) também saem como `{"detail": "..."}` em pt-BR.
 - Rota extra `GET /healthz` → `{"status":"ok"}`.
+
+## Notas de integração (PM)
+- `state` traz `server_now` (epoch ms do servidor no envio); o timer usa `deadline - server_now`.
+- `match.down_counts` = `{"A": n, "B": n}`: quantas cartas cada lado virou (visível a todos, sem revelar quais).

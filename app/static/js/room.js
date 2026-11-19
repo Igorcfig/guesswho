@@ -417,8 +417,8 @@ function renderGame() {
   $('g-teams').replaceChildren(...sides.map((side) => {
     const mem = players().filter((p) => p.side === side);
     const title = side === mySide ? (isDuel() ? 'Você' : `Seu time · ${sideLabel(side, true)}`) : (isDuel() ? 'Adversário' : sideLabel(side));
-    const down = m?.boards?.[side]?.down;
-    const left = down && m ? `restam ${m.characters.length - down.length}` : '';
+    const downN = m?.down_counts?.[side] ?? m?.boards?.[side]?.down?.length;
+    const left = m && downN != null ? `restam ${m.characters.length - downN}` : '';
     return h('div', { class: `team-block team-${side}` },
       h('div', { class: 'team-block-head' }, h('span', { class: `team-name side-color-${side}` }, title), h('span', { class: 'team-left' }, left)),
       h('ul', { class: 'member-list member-list-tight' }, mem.map((p) => {
@@ -695,8 +695,9 @@ function syncTimer() {
   timerTotal = (S.room.settings.turn_seconds || 45) * 1000;
   if (m.deadline !== lastDeadline) {
     lastDeadline = m.deadline;
-    // Sem hora do servidor no snapshot: limita ao tamanho da fase para tolerar relógios desalinhados.
-    const remaining = Math.max(0, Math.min(timerTotal, m.deadline - Date.now()));
+    // Usa a hora do servidor (server_now) para não depender do relógio do cliente.
+    const ref = S.server_now || Date.now();
+    const remaining = Math.max(0, Math.min(timerTotal, m.deadline - ref));
     timerEnd = performance.now() + remaining;
   }
   tick();

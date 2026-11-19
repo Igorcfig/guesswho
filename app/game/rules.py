@@ -614,6 +614,8 @@ class Room:
                 "deadline": m.deadline,
                 "pending_question": dict(m.pending_question) if m.pending_question else None,
                 "boards": {s: {"down": list(m.boards[s])} for s in visible},
+                # Quantas cartas cada lado já virou (sem revelar quais).
+                "down_counts": {s: len(m.boards[s]) for s in SIDES},
                 "secrets": {s: m.secrets[s] for s in visible},
                 "log": [dict(e) for e in m.log],
                 "winner_side": m.winner_side,

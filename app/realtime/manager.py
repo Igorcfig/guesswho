@@ -103,7 +103,9 @@ class RoomManager:
     async def broadcast_state(self, session: RoomSession) -> None:
         async with session.lock:
             for pid, ws in list(session.connections.items()):
-                await self._send(ws, session.room.snapshot_for(pid))
+                snap = session.room.snapshot_for(pid)
+                snap["server_now"] = self.clock()
+                await self._send(ws, snap)
 
     async def send_to(self, session: RoomSession, player_ids: list[str], payload: dict[str, Any]) -> None:
         async with session.lock:
