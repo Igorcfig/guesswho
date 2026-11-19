@@ -163,3 +163,27 @@ Visibilidade (personalização obrigatória — nunca vazar segredos):
 ## Testes
 `pytest` cobre: regras puras (turnos, rodízio, timer via clock injetável, chute, placar, série, fila do duelo,
 visibilidade do snapshot), API de temas (validação) e um teste WS com `TestClient` (2 jogadores, partida completa).
+
+## Notas do Backend
+Decisões tomadas onde o SPEC era omisso (o contrato acima não muda):
+- **Jogador novo** entra como observador (`side: null`); no duelo entra automaticamente no fim da `queue`.
+  Em `team`, `queue` é sempre `[]`.
+- **Duelo / `join_side`**: lado ocupado por jogador conectado → erro "Esse lado já está ocupado."; se o ocupante
+  estiver desconectado, ele vira observador e o novo jogador assume o lado. Trocar o modo para `duel` mantém
+  apenas o primeiro de cada lado (os demais viram observadores).
+- **Desconectados** continuam na lista `players` com `connected:false` (para poderem reconectar com o mesmo lugar).
+- **`asker_id`/`answerer_id`** podem ser `null` quando o lado da vez não tem ninguém conectado (o timer segue e,
+  após 60 s sem conectados, há W.O.). Quando alguém do lado reconecta, assume a vaga.
+- **Log**: entrada `guess` tem `text` = nome do personagem chutado; entrada `timeout` tem `text: null`.
+  `ts` de entradas geradas por timeout = o `deadline` que expirou.
+- **`next_match` no duelo**: além da troca do perdedor, um lado sem ninguém conectado também é preenchido pelo
+  primeiro conectado da fila. `wins` (duelo) não é zerado por `back_to_lobby` (só `score`, partida e série).
+  `back_to_lobby` reinicia a numeração (próxima partida é a nº 1, começando com A).
+- **Páginas**: `GET /sala/{code}` inexistente → `303` para `/?erro=sala_nao_encontrada`.
+- **WebSocket**: o servidor aceita e então fecha com: `4404` sala inexistente; `4400` `player_id` não é UUID;
+  `4409` sala cheia (12 conectados; antes envia `{"type":"error"}`); `4000` conexão substituída por outra aba do
+  mesmo `player_id`. `name` vazio vira "Jogador"; `color` fora da paleta vira `#FFC93C`.
+- **`GET /api/rooms`** lista só salas públicas com ao menos 1 conectado. Salas criadas e nunca usadas também
+  expiram após 10 min.
+- **Erros HTTP** genéricos (404/405/validação do FastAPI) também saem como `{"detail": "..."}` em pt-BR.
+- Rota extra `GET /healthz` → `{"status":"ok"}`.

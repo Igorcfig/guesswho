@@ -1,0 +1,77 @@
+"""Aplicação FastAPI do Cara a Cara."""
+from __future__ import annotations
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from http import HTTPStatus
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from app import config
+from app.api import rooms, themes
+from app.db import init_db
+from app.realtime import ws
+from app.realtime.manager import manager
+
+config.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    yield
+
+
+app = FastAPI(title="Cara a Cara", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=config.STATIC_DIR, check_dir=False), name="static")
+app.mount("/uploads", StaticFiles(directory=config.UPLOAD_DIR, check_dir=False), name="uploads")
+templates = Jinja2Templates(directory=str(config.TEMPLATES_DIR))
+
+app.include_router(rooms.router)
+app.include_router(themes.router)
+app.include_router(ws.router)
+
+_STATUS_MESSAGES = {404: "Não encontrado.", 405: "Método não permitido."}
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
+    detail = exc.detail
+    # Mensagens padrão do Starlette ("Not Found" etc.) viram pt-BR.
+    if not isinstance(detail, str) or detail == HTTPStatus(exc.status_code).phrase:
+        detail = _STATUS_MESSAGES.get(exc.status_code, "Erro na requisição.")
+    return JSONResponse(status_code=exc.status_code, content={"detail": detail}, headers=exc.headers)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": "Dados inválidos na requisição."})
+
+
+# ------------------------------------------------------------------ páginas
+@app.get("/", include_in_schema=False)
+def index(request: Request) -> Response:
+    return templates.TemplateResponse(request, "index.html", {})
+
+
+@app.get("/sala/{code}", include_in_schema=False)
+def room_page(request: Request, code: str) -> Response:
+    session = manager.get(code)
+    if session is None:
+        return RedirectResponse(url="/?erro=sala_nao_encontrada", status_code=303)
+    return templates.TemplateResponse(request, "room.html", {"code": session.room.code})
+
+
+@app.get("/temas/novo", include_in_schema=False)
+def theme_editor(request: Request) -> Response:
+    return templates.TemplateResponse(request, "theme_editor.html", {})
+
+
+@app.get("/healthz", include_in_schema=False)
+def healthz() -> dict[str, str]:
+    return {"status": "ok"}
