@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Cara a Cara · Início{% endblock %}
+{% block body_class %}page-home{% endblock %}
+{% block content %}
+<header class="site-header wrap">
+  <a class="brand" href="/" aria-label="Cara a Cara, voltar ao início">
+    <img class="brand-logo" src="/static/img/logo.svg" alt="" width="44" height="44">
+    <span class="brand-name">Cara a Cara</span>
+  </a>
+  <nav class="site-nav" aria-label="Principal">
+    <a href="#como-jogar">Como jogar</a>
+    <a href="/temas/novo">Criar tema</a>
+  </nav>
+</header>
+
+<main id="conteudo" class="home-main wrap">
+  <section class="card hero" aria-labelledby="hero-title">
+    <h1 id="hero-title">Adivinhe quem é<br>antes dos amigos.</h1>
+    <p class="lead">Perguntas de sim ou não, um personagem secreto e uma sala cheia de gente chutando.</p>
+
+    <form id="profile-form" class="profile" novalidate>
+      <div class="profile-row">
+        <div class="avatar-big-wrap">
+          <svg id="avatar-svg" class="avatar-big" viewBox="0 0 64 64" width="96" height="96" role="img" aria-label="Seu avatar">
+            <rect id="avatar-bg" width="64" height="64" rx="16" fill="#FFC93C"></rect>
+            <path d="M12 64 C12 46 52 46 52 64 Z" fill="#1B1446" opacity=".85"></path>
+            <circle cx="32" cy="30" r="14" fill="#F2C29B"></circle>
+            <path d="M18 28 C18 11 46 11 46 28 C42 19 22 19 18 28 Z" fill="#3B2A1A"></path>
+            <circle cx="27" cy="30" r="1.8" fill="#1B1446"></circle>
+            <circle cx="37" cy="30" r="1.8" fill="#1B1446"></circle>
+            <path d="M27 36 Q32 40 37 36" stroke="#1B1446" stroke-width="2" fill="none" stroke-linecap="round"></path>
+          </svg>
+          <button type="button" id="avatar-next" class="avatar-swap" aria-label="Trocar cor do avatar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>
+          </button>
+        </div>
+        <div class="field grow">
+          <label for="nick">Seu apelido</label>
+          <input id="nick" class="input input-lg" name="nick" maxlength="20" autocomplete="nickname" placeholder="Como te chamam?" required>
+          <div class="swatches" id="colors" aria-label="Cor do avatar"></div>
+        </div>
+      </div>
+    </form>
+
+    <div class="btn-row-2">
+      <button type="button" id="play-now" class="btn btn-primary btn-xl">Jogar agora</button>
+      <button type="button" id="create-room" class="btn btn-dark btn-xl">Criar sala</button>
+    </div>
+
+    <form id="join-form" class="join-row" novalidate>
+      <div class="field grow">
+        <label for="code">Tem um código?</label>
+        <input id="code" class="input input-lg input-code" maxlength="4" placeholder="Ex.: K7Q2" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint">
+        <span id="code-hint" class="sr-only">4 letras ou números</span>
+      </div>
+      <button type="submit" class="btn btn-outline-dark btn-lg">Entrar</button>
+    </form>
+  </section>
+
+  <section class="rooms" aria-labelledby="rooms-title">
+    <div class="rooms-head">
+      <h2 id="rooms-title">Salas abertas</h2>
+      <span id="rooms-count" class="muted-strong">carregando…</span>
+    </div>
+    <div id="rooms-list" class="rooms-list" aria-live="polite"></div>
+  </section>
+</main>
+
+<section id="como-jogar" class="steps-band" aria-labelledby="steps-title">
+  <h2 id="steps-title" class="sr-only">Como jogar</h2>
+  <ol class="steps wrap">
+    <li><span class="step-n">1</span><div><strong>Entre numa sala</strong><span>Crie uma sala e mande o link, ou entre com o código.</span></div></li>
+    <li><span class="step-n">2</span><div><strong>Pergunte e elimine</strong><span>Na sua vez, faça uma pergunta de sim ou não e vire as cartas.</span></div></li>
+    <li><span class="step-n">3</span><div><strong>Chute e pontue</strong><span>Acertou o personagem secreto do outro lado? Ponto para você. Errou, ponto para eles.</span></div></li>
+  </ol>
+</section>
+{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/home.js"></script>{% endblock %}

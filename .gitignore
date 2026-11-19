@@ -221,3 +221,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Cara a Cara
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+uploads/
+.env
+*.db
