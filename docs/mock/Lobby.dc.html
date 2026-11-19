@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cara a Cara · Sala de espera</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1B1446}
+a{color:#FFC93C}a:hover{color:#FFE08A}
+</style>
+</helmet>
+<div style="min-height: 800px; width: 100%; box-sizing: border-box; background: #1B1446; color: #FFFFFF; font-family: Nunito, system-ui, sans-serif; padding: 20px 40px 40px; display: flex; flex-direction: column; gap: 20px;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; max-width: 1200px; width: 100%; margin: 0 auto;">
+    <a href="Main.dc.html" style="display: flex; align-items: center; gap: 12px; color: #FFFFFF; text-decoration: none;">
+      <svg width="40" height="40" viewBox="0 0 44 44" aria-hidden="true"><rect x="2" y="2" width="40" height="40" rx="12" fill="#FFC93C"></rect><circle cx="16" cy="19" r="3" fill="#1B1446"></circle><circle cx="28" cy="19" r="3" fill="#1B1446"></circle><path d="M14 28 Q22 34 30 28" stroke="#1B1446" stroke-width="3" fill="none" stroke-linecap="round"></path></svg>
+      <span style="font-family: Fredoka, sans-serif; font-weight: 700; font-size: 24px;">Cara a Cara</span>
+    </a>
+    <div style="display: flex; align-items: center; gap: 10px; background: #2A2160; border-radius: 16px; padding: 8px 8px 8px 18px;">
+      <span style="font-size: 14px; color: #B9B4E0; font-weight: 700;">Código da sala</span>
+      <span style="font-family: Fredoka, sans-serif; font-weight: 700; font-size: 26px; letter-spacing: 4px; color: #FFC93C;">K7Q2</span>
+      <button style="height: 44px; padding: 0 16px; border-radius: 12px; border: none; background: #FFFFFF; color: #1B1446; font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-family: Nunito, sans-serif;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"></path><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"></path></svg>
+        Copiar link
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width: 1200px; width: 100%; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+    <span style="font-weight: 800; font-size: 15px; color: #CFCBEE;">Modo de jogo</span>
+    <div role="radiogroup" aria-label="Modo de jogo" style="display: flex; background: #2A2160; border-radius: 16px; padding: 6px; gap: 6px;">
+      <button role="radio" aria-checked="{{duelOn}}" onClick="{{setDuel}}" style="height: 48px; padding: 0 20px; border-radius: 12px; border: none; background: {{duelBg}}; color: {{duelFg}}; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 18px; cursor: pointer;">Duelo 1x1</button>
+      <button role="radio" aria-checked="{{teamOn}}" onClick="{{setTeam}}" style="height: 48px; padding: 0 20px; border-radius: 12px; border: none; background: {{teamBg}}; color: {{teamFg}}; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 18px; cursor: pointer;">Time x Time</button>
+    </div>
+    <span style="font-size: 14px; color: #B9B4E0; font-weight: 700;">{{modeHint}}</span>
+  </div>
+
+  <div style="max-width: 1200px; width: 100%; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+    <sc-for list="{{sides}}" as="s" hint-placeholder-count="2">
+      <section style="background: #2A2160; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 10px; border-top: 8px solid {{s.color}};">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="margin: 0; font-family: Fredoka, sans-serif; font-size: 22px; color: {{s.color}};">{{s.name}}</h2>
+          <span style="font-weight: 800; color: #B9B4E0;">{{s.count}}</span>
+        </div>
+        <sc-for list="{{s.members}}" as="p" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 12px; background: #1B1446; border-radius: 14px; padding: 8px 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 11px; background: {{p.color}}; color: #1B1446; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center;">{{p.initial}}</div>
+            <span style="flex: 1; font-weight: 800; font-size: 16px;">{{p.name}}</span>
+            <span style="font-size: 12px; font-weight: 800; color: #7EE8DD;">{{p.tag}}</span>
+          </div>
+        </sc-for>
+        <button style="height: 46px; border-radius: 14px; border: 2px dashed {{s.color}}; background: transparent; color: {{s.color}}; font-weight: 800; font-size: 15px; font-family: Nunito, sans-serif; cursor: pointer;">{{s.cta}}</button>
+      </section>
+    </sc-for>
+    <section style="background: #241B57; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 10px; border-top: 8px solid #7A74A8;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; font-family: Fredoka, sans-serif; font-size: 22px; color: #CFCBEE;">Observadores</h2>
+        <span style="font-weight: 800; color: #B9B4E0;">{{watchCount}}</span>
+      </div>
+      <sc-for list="{{watchers}}" as="p" hint-placeholder-count="2">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 4px 2px;">
+          <div style="width: 32px; height: 32px; border-radius: 9px; background: {{p.color}}; color: #1B1446; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center;">{{p.initial}}</div>
+          <span style="font-weight: 700; font-size: 15px;">{{p.name}}</span>
+        </div>
+      </sc-for>
+      <span style="font-size: 13px; color: #B9B4E0; font-weight: 700;">Quem não escolhe lado assiste aos dois tabuleiros. O chat dos observadores não chega aos jogadores.</span>
+    </section>
+  </div>
+
+  <div style="max-width: 1200px; width: 100%; margin: 0 auto; background: #FFFFFF; color: #1B1446; border-radius: 24px; padding: 20px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; box-shadow: 0 10px 0 #0F0B2E;">
+    <div style="flex: 2 1 240px; display: flex; flex-direction: column; gap: 6px;">
+      <label for="theme" style="font-weight: 800; font-size: 15px;">Tema dos personagens</label>
+      <select id="theme" style="height: 48px; border-radius: 12px; border: 3px solid #E4E1F5; padding: 0 12px; font-size: 16px; font-weight: 700; font-family: Nunito, sans-serif; color: #1B1446; background: #FFFFFF;"><option>Clássico (24 personagens)</option><option>Bichos da fazenda · por Marina</option><option>Professores · por Caio</option></select>
+    </div>
+    <div style="flex: 1 1 150px; display: flex; flex-direction: column; gap: 6px;">
+      <label for="turn" style="font-weight: 800; font-size: 15px;">Tempo por vez</label>
+      <select id="turn" style="height: 48px; border-radius: 12px; border: 3px solid #E4E1F5; padding: 0 12px; font-size: 16px; font-weight: 700; font-family: Nunito, sans-serif; color: #1B1446; background: #FFFFFF;"><option>45 segundos</option><option>30 segundos</option><option>60 segundos</option></select>
+    </div>
+    <div style="flex: 1 1 150px; display: flex; flex-direction: column; gap: 6px;">
+      <label for="best" style="font-weight: 800; font-size: 15px;">Partidas</label>
+      <select id="best" style="height: 48px; border-radius: 12px; border: 3px solid #E4E1F5; padding: 0 12px; font-size: 16px; font-weight: 700; font-family: Nunito, sans-serif; color: #1B1446; background: #FFFFFF;"><option>Melhor de 3</option><option>Partida única</option><option>Melhor de 5</option></select>
+    </div>
+    <a href="Game.dc.html" style="flex: 1 1 220px; height: 56px; border-radius: 16px; background: #FF5E5B; color: #FFFFFF; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 22px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 5px 0 #C9403E;">Começar</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: 'team' };
+  }
+  renderVals() {
+    const team = this.state.mode === 'team';
+    const P = {
+      igor: { name: 'Igor', initial: 'IG', color: '#FFC93C', tag: 'ANFITRIÃO' },
+      marina: { name: 'Marina', initial: 'MA', color: '#2EC4B6', tag: 'PRONTA' },
+      caio: { name: 'Caio', initial: 'CA', color: '#FF9F5A', tag: 'PRONTO' },
+      bia: { name: 'Bia', initial: 'BI', color: '#B8A6FF', tag: 'PRONTA' },
+      rafa: { name: 'Rafa', initial: 'RA', color: '#FF7C9C', tag: '' },
+      lu: { name: 'Lu', initial: 'LU', color: '#7EE8DD', tag: '' }
+    };
+    const sides = team
+      ? [
+          { name: 'Time Amarelo', color: '#FFC93C', count: '2 jogadores', members: [P.igor, P.marina], cta: 'Entrar no Time Amarelo' },
+          { name: 'Time Coral', color: '#FF7C79', count: '2 jogadores', members: [P.caio, P.bia], cta: 'Entrar no Time Coral' }
+        ]
+      : [
+          { name: 'Jogador 1', color: '#FFC93C', count: '1 / 1', members: [P.igor], cta: 'Lugar ocupado' },
+          { name: 'Jogador 2', color: '#FF7C79', count: '1 / 1', members: [P.caio], cta: 'Lugar ocupado' }
+        ];
+    const watchers = team ? [P.rafa, P.lu] : [P.marina, P.bia, P.rafa, P.lu];
+    return {
+      sides,
+      watchers,
+      watchCount: String(watchers.length),
+      duelOn: team ? 'false' : 'true',
+      teamOn: team ? 'true' : 'false',
+      duelBg: team ? 'transparent' : '#FFC93C',
+      duelFg: team ? '#FFFFFF' : '#1B1446',
+      teamBg: team ? '#FFC93C' : 'transparent',
+      teamFg: team ? '#1B1446' : '#FFFFFF',
+      modeHint: team
+        ? 'Cada time tem um segredo e um tabuleiro. Os membros se revezam para perguntar.'
+        : 'Dois jogadores se enfrentam; o vencedor fica na mesa e o próximo da fila entra.',
+      setDuel: () => this.setState({ mode: 'duel' }),
+      setTeam: () => this.setState({ mode: 'team' })
+    };
+  }
+}
+</script>
+</body>
+</html>

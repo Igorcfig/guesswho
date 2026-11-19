@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cara a Cara · Partida</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1B1446}
+a{color:#FFC93C}a:hover{color:#FFE08A}
+input::placeholder{color:#7A74A8}
+</style>
+</helmet>
+<div style="min-height: 860px; width: 100%; box-sizing: border-box; background: #1B1446; color: #FFFFFF; font-family: Nunito, system-ui, sans-serif; padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 16px;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+    <a href="Main.dc.html" aria-label="Voltar ao início" style="display: flex;">
+      <svg width="40" height="40" viewBox="0 0 44 44" aria-hidden="true"><rect x="2" y="2" width="40" height="40" rx="12" fill="#FFC93C"></rect><circle cx="16" cy="19" r="3" fill="#1B1446"></circle><circle cx="28" cy="19" r="3" fill="#1B1446"></circle><path d="M14 28 Q22 34 30 28" stroke="#1B1446" stroke-width="3" fill="none" stroke-linecap="round"></path></svg>
+    </a>
+    <div style="display: flex; flex-direction: column;">
+      <span style="font-family: Fredoka, sans-serif; font-weight: 700; font-size: 20px;">Galera do trampo</span>
+      <span style="font-size: 13px; color: #B9B4E0; font-weight: 700;">Sala K7Q2 · Time x Time · Tema Clássico</span>
+    </div>
+    <div style="flex: 1; display: flex; justify-content: center;">
+      <div style="background: #FFC93C; color: #1B1446; border-radius: 14px; padding: 10px 18px; font-weight: 800; font-size: 16px;">Vez do Time Amarelo: você pergunta, o Time Coral responde.</div>
+    </div>
+    <span style="font-weight: 800; color: #B9B4E0;">Partida 2 de 3</span>
+    <div role="timer" aria-label="Tempo restante 32 segundos" style="width: 60px; height: 60px; border-radius: 30px; border: 5px solid #2EC4B6; display: flex; align-items: center; justify-content: center; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 22px; box-sizing: border-box;">32</div>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;">
+    <aside style="flex: 1 1 200px; max-width: 250px; background: #2A2160; border-radius: 20px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; background: #1B1446; border-radius: 14px; padding: 10px 12px;">
+        <span style="font-weight: 800; color: #FFC93C;">Amarelo</span>
+        <span style="font-family: Fredoka, sans-serif; font-weight: 700; font-size: 22px;">1 x 0</span>
+        <span style="font-weight: 800; color: #FF7C79;">Coral</span>
+      </div>
+      <h2 style="margin: 0; font-family: Fredoka, sans-serif; font-size: 18px;">Segredo do seu time</h2>
+      <div style="background: #FFC93C; border-radius: 16px; padding: 8px; display: flex; flex-direction: column; gap: 6px; align-items: center;">
+        <svg viewBox="0 0 64 64" style="width: 100%; height: auto; display: block; border-radius: 12px;" role="img" aria-label="Rita">
+          <rect width="64" height="64" fill="#FFD0DD"></rect>
+          <path d="M17 28 v16 h6 v-16 z M41 28 v16 h6 v-16 z" fill="#E86A3A"></path>
+          <path d="M12 64 C12 46 52 46 52 64 Z" fill="#8A6CFF"></path>
+          <circle cx="32" cy="30" r="14" fill="#F7D2B0"></circle>
+          <path d="M18 28 C18 11 46 11 46 28 C42 19 22 19 18 28 Z" fill="#E86A3A"></path>
+          <circle cx="27" cy="30" r="1.8" fill="#1B1446"></circle>
+          <circle cx="37" cy="30" r="1.8" fill="#1B1446"></circle>
+          <path d="M27 36 Q32 40 37 36" stroke="#1B1446" stroke-width="2" fill="none" stroke-linecap="round"></path>
+        </svg>
+        <span style="font-family: Fredoka, sans-serif; font-weight: 700; font-size: 20px; color: #1B1446;">Rita</span>
+      </div>
+      <sc-for list="{{teams}}" as="t" hint-placeholder-count="2">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <span style="font-weight: 800; font-size: 15px; color: {{t.color}};">{{t.name}}</span>
+            <span style="font-size: 12px; font-weight: 800; color: #B9B4E0;">{{t.left}}</span>
+          </div>
+          <sc-for list="{{t.members}}" as="p" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: 30px; height: 30px; border-radius: 8px; background: {{p.color}}; color: #1B1446; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center;">{{p.initial}}</div>
+              <span style="flex: 1; font-weight: 700; font-size: 14px;">{{p.name}}</span>
+              <span style="font-size: 11px; font-weight: 800; color: {{p.tagColor}};">{{p.tag}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+      <span style="font-size: 12px; color: #B9B4E0; font-weight: 700;">2 observadores assistindo</span>
+    </aside>
+
+    <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span style="font-weight: 800; font-size: 15px; color: #CFCBEE;">Clique para virar quem você já descartou · restam {{remaining}}</span>
+        <button onClick="{{reset}}" style="height: 40px; padding: 0 14px; border-radius: 12px; border: 2px solid #4A4190; background: transparent; color: #FFFFFF; font-weight: 800; font-family: Nunito, sans-serif; cursor: pointer;">Desvirar todas</button>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px;">
+        <sc-for list="{{chars}}" as="c" hint-placeholder-count="24">
+          <button onClick="{{c.toggle}}" aria-pressed="{{c.down}}" aria-label="{{c.name}}" style="border: none; padding: 6px 6px 8px; border-radius: 16px; background: {{c.cardBg}}; cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: stretch; opacity: {{c.opacity}}; transform: {{c.tilt}}; box-shadow: 0 4px 0 #0F0B2E; font-family: Nunito, sans-serif;">
+            <svg viewBox="0 0 64 64" style="width: 100%; height: auto; display: block; border-radius: 12px;" aria-hidden="true">
+              <rect width="64" height="64" fill="{{c.bg}}"></rect>
+              <path d="M17 28 v16 h6 v-16 z M41 28 v16 h6 v-16 z" fill="{{c.hair}}" opacity="{{c.longHair}}"></path>
+              <path d="M12 64 C12 46 52 46 52 64 Z" fill="{{c.shirt}}"></path>
+              <circle cx="32" cy="30" r="14" fill="{{c.skin}}"></circle>
+              <path d="M18 28 C18 11 46 11 46 28 C42 19 22 19 18 28 Z" fill="{{c.hair}}" opacity="{{c.hasHair}}"></path>
+              <path d="M19 32 C21 47 43 47 45 32 C41 40 23 40 19 32 Z" fill="{{c.hair}}" opacity="{{c.beard}}"></path>
+              <circle cx="27" cy="30" r="1.8" fill="#1B1446"></circle>
+              <circle cx="37" cy="30" r="1.8" fill="#1B1446"></circle>
+              <path d="M27 36 Q32 40 37 36" stroke="#1B1446" stroke-width="2" fill="none" stroke-linecap="round"></path>
+              <g fill="none" stroke="#1B1446" stroke-width="1.6" opacity="{{c.glasses}}"><circle cx="27" cy="30" r="4.2"></circle><circle cx="37" cy="30" r="4.2"></circle><path d="M31.2 30h1.6"></path></g>
+              <path d="M15 20 h34 v-3 c0-8 -34-8 -34 0 z" fill="{{c.hat}}" opacity="{{c.hasHat}}"></path>
+            </svg>
+            <span style="font-weight: 800; font-size: 14px; color: #1B1446; text-align: center;">{{c.name}}</span>
+          </button>
+        </sc-for>
+      </div>
+    </main>
+
+    <aside style="flex: 1 1 280px; max-width: 340px; background: #FFFFFF; color: #1B1446; border-radius: 20px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;">
+      <h2 style="margin: 0; font-family: Fredoka, sans-serif; font-size: 20px;">Perguntas</h2>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: auto;">
+        <sc-for list="{{log}}" as="q" hint-placeholder-count="5">
+          <div style="display: flex; flex-direction: column; gap: 4px; background: #F6F4FF; border-radius: 14px; padding: 10px 12px;">
+            <span style="font-size: 12px; font-weight: 800; color: #5A5488;">{{q.who}}</span>
+            <div style="display: flex; align-items: center; gap: 8px; justify-content: space-between;">
+              <span style="font-size: 15px; font-weight: 700;">{{q.text}}</span>
+              <span style="font-size: 13px; font-weight: 800; border-radius: 8px; padding: 3px 8px; background: {{q.badgeBg}}; color: #1B1446; flex-shrink: 0;">{{q.answer}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <label for="ask" style="font-weight: 800; font-size: 14px;">Sua pergunta</label>
+      <div style="display: flex; gap: 8px;">
+        <input id="ask" placeholder="Seu personagem usa chapéu?" style="flex: 1; min-width: 0; height: 48px; border-radius: 12px; border: 3px solid #E4E1F5; padding: 0 12px; font-size: 15px; font-weight: 700; font-family: Nunito, sans-serif; color: #1B1446; outline: none;">
+        <button aria-label="Enviar pergunta" style="width: 48px; height: 48px; border-radius: 12px; border: none; background: #1B1446; color: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+        </button>
+      </div>
+      <button style="height: 56px; border-radius: 16px; border: none; background: #FF5E5B; color: #FFFFFF; font-family: Fredoka, sans-serif; font-weight: 600; font-size: 20px; cursor: pointer; box-shadow: 0 5px 0 #C9403E;">Chutar personagem</button>
+      <span style="font-size: 12px; color: #5A5488; font-weight: 700; text-align: center;">Cuidado: chute errado perde a partida.</span>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { down: { 1: true, 4: true, 9: true, 13: true, 18: true, 22: true } };
+  }
+  renderVals() {
+    const names = ['Ana','Bruno','Carla','Davi','Elisa','Fábio','Gabi','Heitor','Iara','João','Karina','Leo','Marta','Nico','Olga','Paulo','Quim','Rita','Sofia','Téo','Ulisses','Vera','Wesley','Yara'];
+    const bgs = ['#FFE7A3','#BFF0EA','#FFD3C2','#DCD3FF','#FFD0DD','#D6F5C9'];
+    const skins = ['#F7D2B0','#E8B48A','#C68B5E','#8D5A3B','#F2C29B','#5C3A24'];
+    const hairs = ['#3B2A1A','#D9A441','#8C2F1B','#1F1F2E','#B5B5C3','#6B3E26','#E86A3A'];
+    const shirts = ['#2EC4B6','#FF5E5B','#1B1446','#FF9F5A','#8A6CFF','#3A86FF'];
+    const hats = ['#FF5E5B','#1B1446','#2EC4B6','#FFC93C'];
+    const down = this.state.down;
+    const chars = names.map((name, i) => {
+      const isDown = !!down[i];
+      const female = [0,2,4,6,8,10,12,14,17,18,21,23].indexOf(i) >= 0;
+      return {
+        name,
+        bg: bgs[i % bgs.length],
+        skin: skins[(i * 5) % skins.length],
+        hair: hairs[(i * 3) % hairs.length],
+        shirt: shirts[(i * 7) % shirts.length],
+        hat: hats[i % hats.length],
+        hasHair: (i % 7 === 3) ? 0 : 1,
+        longHair: female ? 1 : 0,
+        beard: (!female && i % 3 === 1) ? 1 : 0,
+        glasses: (i % 4 === 2) ? 1 : 0,
+        hasHat: (i % 5 === 0) ? 1 : 0,
+        down: isDown ? 'true' : 'false',
+        cardBg: isDown ? '#4A4190' : '#FFFFFF',
+        opacity: isDown ? 0.35 : 1,
+        tilt: isDown ? 'scale(0.94)' : 'none',
+        toggle: () => this.setState({ down: Object.assign({}, down, { [i]: !isDown }) })
+      };
+    });
+    const remaining = chars.filter((c) => c.down === 'false').length;
+    return {
+      chars,
+      remaining,
+      reset: () => this.setState({ down: {} }),
+      teams: [
+        { name: 'Seu time · Amarelo', color: '#FFC93C', left: `restam ${remaining}`, members: [
+          { name: 'Igor (você)', initial: 'IG', color: '#FFC93C', tag: 'PERGUNTA', tagColor: '#FFC93C' },
+          { name: 'Marina', initial: 'MA', color: '#2EC4B6', tag: 'próxima', tagColor: '#B9B4E0' }
+        ] },
+        { name: 'Time Coral', color: '#FF7C79', left: 'restam 9', members: [
+          { name: 'Caio', initial: 'CA', color: '#FF9F5A', tag: 'RESPONDE', tagColor: '#7EE8DD' },
+          { name: 'Bia', initial: 'BI', color: '#B8A6FF', tag: '', tagColor: '#B9B4E0' }
+        ] }
+      ],
+      log: [
+        { who: 'Marina (seu time) perguntou', text: 'Usa óculos?', answer: 'NÃO', badgeBg: '#FFC9C8' },
+        { who: 'Caio (Coral) perguntou ao seu time', text: 'Tem cabelo comprido?', answer: 'SIM', badgeBg: '#BFF0EA' },
+        { who: 'Igor (seu time) perguntou', text: 'Está de chapéu?', answer: 'NÃO', badgeBg: '#FFC9C8' },
+        { who: 'Bia (Coral) perguntou ao seu time', text: 'É ruiva?', answer: 'SIM', badgeBg: '#BFF0EA' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cara a Cara · Observando</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1B1446}
+a{color:#FFC93C}a:hover{color:#FFE08A}
+input::placeholder{color:#7A74A8}
+</style>
+</helmet>
+<div style="min-height: 860px; width: 100%; box-sizing: border-box; background: #1B1446; color: #FFFFFF; font-family: Nunito, system-ui, sans-serif; padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 16px;">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+    <a href="Main.dc.html" aria-label="Voltar ao início" style="display: flex;">
+      <svg width="40" height="40" viewBox="0 0 44 44" aria-hidden="true"><rect x="2" y="2" width="40" height="40" rx="12" fill="#FFC93C"></rect><circle cx="16" cy="19" r="3" fill="#1B1446"></circle><circle cx="28" cy="19" r="3" fill="#1B1446"></circle><path d="M14 28 Q22 34 30 28" stroke="#1B1446" stroke-width="3" fill="none" stroke-linecap="round"></path></svg>
+    </a>
+    <div style="display: flex; flex-direction: column;">
+      <span style="font-family: Fredoka, sans-serif; font-weight: 700; font-size: 20px;">Galera do trampo</span>
+      <span style="font-size: 13px; color: #B9B4E0; font-weight: 700;">Sala K7Q2 · Você está observando</span>
+    </div>
+    <div style="flex: 1; display: flex; justify-content: center;">
+      <div style="background: #2A2160; border-radius: 14px; padding: 10px 18px; font-weight: 800; font-size: 16px; display: flex; gap: 14px; align-items: center;">
+        <span style="color: #FFC93C;">Time Amarelo</span>
+        <span style="font-family: Fredoka, sans-serif; font-size: 22px;">1 x 0</span>
+        <span style="color: #FF7C79;">Time Coral</span>
+      </div>
+    </div>
+    <button style="height: 44px; padding: 0 16px; border-radius: 12px; border: 2px solid #FFC93C; background: transparent; color: #FFC93C; font-weight: 800; font-family: Nunito, sans-serif; cursor: pointer;">Entrar na próxima partida</button>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;">
+    <sc-for list="{{sides}}" as="s" hint-placeholder-count="2">
+      <section style="flex: 1 1 380px; min-width: 0; background: #2A2160; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; border-top: 8px solid {{s.color}};">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 64px; flex-shrink: 0; background: {{s.color}}; border-radius: 12px; padding: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <div style="width: 56px; height: 56px; border-radius: 9px; background: #FFFFFF; color: #1B1446; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 24px; display: flex; align-items: center; justify-content: center;">{{s.secretInitial}}</div>
+            <span style="font-size: 11px; font-weight: 800; color: #1B1446;">{{s.secret}}</span>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-family: Fredoka, sans-serif; font-weight: 700; font-size: 20px; color: {{s.color}};">{{s.name}}</span>
+            <span style="font-size: 13px; font-weight: 700; color: #CFCBEE;">{{s.members}}</span>
+            <span style="font-size: 13px; font-weight: 800; color: #FFFFFF;">{{s.status}}</span>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{s.cards}}" as="c" hint-placeholder-count="24">
+            <div style="aspect-ratio: 3 / 4; border-radius: 10px; background: {{c.bg}}; opacity: {{c.opacity}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; outline: {{c.outline}};">
+              <span style="width: 30px; height: 30px; border-radius: 15px; background: {{c.face}}; color: #1B1446; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center;">{{c.initial}}</span>
+              <span style="font-size: 11px; font-weight: 800; color: #1B1446;">{{c.name}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+
+    <aside style="flex: 1 1 260px; max-width: 320px; background: #FFFFFF; color: #1B1446; border-radius: 20px; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px;">
+      <h2 style="margin: 0; font-family: Fredoka, sans-serif; font-size: 18px;">Chat dos observadores</h2>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+        <sc-for list="{{chat}}" as="m" hint-placeholder-count="4">
+          <div style="background: #F6F4FF; border-radius: 12px; padding: 8px 10px; font-size: 14px;"><strong>{{m.who}}:</strong> {{m.text}}</div>
+        </sc-for>
+      </div>
+      <label for="say" style="font-weight: 800; font-size: 13px;">Mensagem (só observadores veem)</label>
+      <input id="say" placeholder="Eles nunca vão adivinhar a Rita…" style="height: 44px; border-radius: 12px; border: 3px solid #E4E1F5; padding: 0 12px; font-size: 14px; font-weight: 700; font-family: Nunito, sans-serif; color: #1B1446; outline: none;">
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const names = ['Ana','Bruno','Carla','Davi','Elisa','Fábio','Gabi','Heitor','Iara','João','Karina','Leo','Marta','Nico','Olga','Paulo','Quim','Rita','Sofia','Téo','Ulisses','Vera','Wesley','Yara'];
+    const faces = ['#F7D2B0','#E8B48A','#C68B5E','#F2C29B','#FFD0DD','#BFF0EA'];
+    const board = (downSet, secret) => names.map((name, i) => ({
+      name,
+      initial: name.slice(0, 1),
+      face: faces[i % faces.length],
+      bg: '#FFFFFF',
+      opacity: downSet.indexOf(i) >= 0 ? 0.3 : 1,
+      outline: i === secret ? '3px solid #2EC4B6' : 'none'
+    }));
+    return {
+      sides: [
+        { name: 'Time Amarelo', color: '#FFC93C', members: 'Igor, Marina', status: 'Perguntando agora · restam 18', secret: 'Rita', secretInitial: 'R', cards: board([1,4,9,13,18,22], 3) },
+        { name: 'Time Coral', color: '#FF7C79', members: 'Caio, Bia', status: 'Respondendo · restam 9', secret: 'Davi', secretInitial: 'D', cards: board([0,1,2,5,6,7,8,10,11,12,14,15,16,19,20], 17) }
+      ],
+      chat: [
+        { who: 'Rafa', text: 'O Coral já está quase lá' },
+        { who: 'Lu', text: 'Faltou perguntar do cabelo ruivo!' },
+        { who: 'Rafa', text: 'Amarelo precisa cortar mais cartas' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
