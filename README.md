@@ -5,7 +5,7 @@ the faces you have ruled out and be the first to guess your opponent's secret ch
 
 Inspired by the classic "Guess Who?" board game, with Gartic-style online rooms: create a room, share
 the link and play 1-vs-1 duels or team-vs-team matches while everyone else watches. All artwork and
-characters are original. The game UI is in Brazilian Portuguese.
+characters are original. The game is available in Brazilian Portuguese (default) and English, switchable with the flags in the header.
 
 ![Match screen](docs/screenshots/game.png)
 
