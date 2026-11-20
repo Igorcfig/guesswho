@@ -31,6 +31,7 @@ app = FastAPI(title="Cara a Cara", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=config.STATIC_DIR, check_dir=False), name="static")
 app.mount("/uploads", StaticFiles(directory=config.UPLOAD_DIR, check_dir=False), name="uploads")
 templates = Jinja2Templates(directory=str(config.TEMPLATES_DIR))
+templates.env.globals["repo_url"] = config.REPO_URL
 
 app.include_router(rooms.router)
 app.include_router(themes.router)

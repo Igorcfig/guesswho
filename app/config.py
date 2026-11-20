@@ -39,3 +39,5 @@ DATABASE_URL: str = _database_url()
 UPLOAD_DIR: Path = Path(os.environ.get("UPLOAD_DIR", "./uploads")).resolve()
 TEMPLATES_DIR: Path = BASE_DIR / "templates"
 STATIC_DIR: Path = BASE_DIR / "static"
+# Link do código-fonte exibido na página inicial (forks podem trocar).
+REPO_URL: str = os.environ.get("REPO_URL", "https://github.com/Igorcfig/guesswho")

@@ -580,3 +580,10 @@ button { font: inherit; }
 }
 .conn-btn { height: 34px; margin-left: 8px; vertical-align: middle; }
 .input-code::placeholder { text-transform: none; letter-spacing: normal; font-weight: 700; }
+
+/* Link do repositório (início) */
+.nav-github { display: inline-flex; align-items: center; gap: 6px; }
+.site-footer { padding: 20px 0 28px; color: var(--muted); font-size: 14px; font-weight: 700; }
+.site-footer-inner { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; }
+.site-footer a { text-decoration: none; }
+.site-footer a:hover { text-decoration: underline; }
