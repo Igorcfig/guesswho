@@ -1,41 +1,73 @@
 # Cara a Cara
 
-Jogo web multiplayer de adivinhação de personagens (inspirado em "Cara a Cara" / Guess Who?),
-com salas no estilo Gartic. Visual e personagens 100% originais.
+**An open-source, real-time multiplayer guessing game for the browser.** Ask yes/no questions, flip down
+the faces you have ruled out and be the first to guess your opponent's secret character.
 
-## Como rodar
+Inspired by the classic "Guess Who?" board game, with Gartic-style online rooms: create a room, share
+the link and play 1-vs-1 duels or team-vs-team matches while everyone else watches. All artwork and
+characters are original. The game is available in Brazilian Portuguese (default) and English, switchable with the flags in the header.
 
-Requisitos: Docker e Docker Compose.
+![Match screen](docs/screenshots/game.png)
 
-Usuário, senha e nome do banco (e a porta) ficam num arquivo `.env`, que **não vai para o git**.
-O modelo é o `.env.example`.
+## Features
 
-**Desenvolvimento**
+- **Online rooms**: create a room and share its link or 4-letter code, or join a public room from the home page.
+- **Two game modes**
+  - **1v1 duel**: two players at the table. The winner stays and the next person in the queue plays the loser's seat.
+  - **Team vs team**: any number of players per side. Teammates share one board and take turns asking and answering, in a best-of-1/3/5 series.
+- **Spectators**: anyone not on a side watches both boards and both secrets live. Their chat is separate, so they can't spoil the game.
+- **Character themes**: a built-in "Clássico" set of 24 original illustrated characters, plus custom themes. Upload 12–24 pictures, name them, and share the theme publicly or by link.
+- **Real time** over WebSockets, with turn timers, reconnection and walkover when a side disconnects.
+- **Mostly Python**: FastAPI backend, server-rendered Jinja2 templates and dependency-free vanilla JS (no build step).
+
+| Lobby | Spectator view |
+|---|---|
+| ![Lobby](docs/screenshots/lobby.png) | ![Spectator](docs/screenshots/spectator.png) |
+
+## Quick start (Docker)
+
+Requirements: Docker with Docker Compose.
 
 ```bash
-cp .env.example .env        # ajuste a senha se quiser
+git clone https://github.com/Igorcfig/guesswho.git
+cd guesswho
+cp .env.example .env      # set your own database password
 docker compose up --build
 ```
 
-**Produção**
+Open http://localhost:8000. Compose starts two services:
+
+| Service | What it is |
+|---|---|
+| `app` | FastAPI + Uvicorn (single worker, because room state lives in memory). Uploaded theme images are stored in the `uploads` volume. |
+| `db` | PostgreSQL 16 (volume `pgdata`), storing custom themes. It is not exposed on the host. |
+
+Database tables are created automatically on startup.
+
+### Configuration
+
+All settings come from environment variables, which Compose reads from a `.env` file. `.env` and
+`.env.*` are git-ignored; only `.env.example` is committed.
+
+| Variable | Default | Description |
+|---|---|---|
+| `APP_PORT` | `8000` | Host port for the web app |
+| `POSTGRES_USER` | (required) | Database user |
+| `POSTGRES_PASSWORD` | (required) | Database password. Special characters are fine; wrap the value in single quotes if it contains `#` or `$` |
+| `POSTGRES_DB` | (required) | Database name |
+| `REPO_URL` | this repository | Source-code link shown on the home page (handy for forks) |
+
+For production, keep a separate file and pass it explicitly:
 
 ```bash
-cp .env.example .env.prod   # use uma senha forte, ex.: openssl rand -base64 24
+cp .env.example .env.prod   # e.g. generate a password with: openssl rand -base64 24
 docker compose --env-file .env.prod up -d --build
 ```
 
-Se alguma variável obrigatória faltar, o compose para com a mensagem `defina ... no .env`.
-Atenção: o Postgres só usa a senha ao criar o volume `pgdata` pela primeira vez; para trocar
-a senha depois, altere-a no banco ou recrie o volume (`docker compose down -v` apaga os dados).
+> Postgres applies the password only when the `pgdata` volume is first created. If you change it later,
+> update it inside the database or recreate the volume with `docker compose down -v` (this deletes saved themes).
 
-Abra http://localhost:8000 (ou a `APP_PORT` definida). O compose sobe dois serviços:
-
-- `app` — FastAPI + Uvicorn (1 worker) na porta 8000; imagens dos temas ficam no volume `uploads`.
-- `db` — PostgreSQL 16 (volume `pgdata`), usado para guardar os temas customizados.
-
-As tabelas são criadas automaticamente no startup.
-
-### Rodando sem Docker (desenvolvimento)
+## Local development (without Docker)
 
 ```bash
 python -m venv .venv
@@ -43,26 +75,58 @@ python -m venv .venv
 .venv/bin/uvicorn app.main:app --reload
 ```
 
-Sem `DATABASE_URL`, o app usa SQLite (`./dev.db`); uploads vão para `./uploads` (`UPLOAD_DIR`).
+Without database variables the app uses SQLite (`./dev.db`) and stores uploads in `./uploads`.
+You can also set `DATABASE_URL` directly, or `POSTGRES_USER`/`POSTGRES_PASSWORD`/`POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_DB`.
 
-## Testes
+### Running the tests
 
 ```bash
-.venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m pytest
 ```
 
-Os testes usam SQLite e um diretório temporário — não precisam do Postgres.
+The suite covers the game rules, the HTTP API and full matches over WebSocket. It runs on SQLite and does not need Postgres.
 
-## Regras resumidas
+## How to play
 
-- Cada lado (A e B) guarda um personagem secreto sorteado; o objetivo é descobrir o segredo do adversário.
-- Na sua vez, o perguntador faz uma pergunta de sim/não (o outro lado responde) **ou** arrisca um chute.
-- Chute certo: seu lado vence a partida. Chute errado: o adversário vence.
-- Cada fase tem tempo limite (30/45/60/90 s). Se o tempo acaba, a vez passa para o outro lado.
-- Vire as cartas do seu tabuleiro para eliminar suspeitos (no modo time, o tabuleiro é compartilhado).
-- **Duelo**: 1 contra 1. Quem perde vai para o fim da fila de observadores e o próximo da fila entra.
-- **Time**: vários jogadores por lado, perguntando e respondendo em rodízio; vence a série quem fizer
-  a maioria das partidas (melhor de 1, 3 ou 5).
-- Se um lado fica sem ninguém conectado por 60 s durante a partida, o outro vence por W.O.
-- Crie seus próprios temas (12 a 24 personagens, imagens PNG/JPEG/WEBP até 2 MB) em `/temas/novo`.
+1. Each side (A and B) is dealt a secret character; your goal is to find out the other side's secret.
+2. On your turn, ask a yes/no question (the other side answers) **or** make a guess.
+3. Flip down the characters you've ruled out. In team mode the board is shared by the team.
+4. A correct guess wins the match; a wrong guess loses it.
+5. Each phase is timed (30/45/60/90 s). If time runs out, the turn passes to the other side.
+6. If a side has nobody connected for 60 s during a match, the other side wins by walkover.
+
+Custom themes can be created at `/temas/novo` (12–24 characters, PNG/JPEG/WEBP images up to 2 MB each).
+
+## Project structure
+
+```
+app/
+  main.py          FastAPI app, page routes, static and upload mounts
+  config.py        settings from environment variables
+  api/             REST endpoints (rooms, themes)
+  game/rules.py    pure game logic (turns, timers, scoring, per-player snapshots)
+  realtime/        WebSocket handling, room manager, timers
+  templates/       Jinja2 pages
+  static/          CSS, vanilla JS modules, character SVGs
+tests/             pytest suite
+tools/             character generator script
+docs/SPEC.md       technical spec: HTTP API and WebSocket protocol
+docs/mock/         original design mocks
+```
+
+The full WebSocket protocol and game rules are documented in [docs/SPEC.md](docs/SPEC.md) (in Portuguese).
+
+## Contributing
+
+Contributions are welcome! To contribute:
+
+1. Open an issue to discuss a bug or an idea.
+2. Fork the repository and create a branch.
+3. Make your change with tests where it makes sense, and make sure `pytest` passes.
+4. Open a pull request describing what changed and why.
+
+The classic characters are generated by `tools/gen_characters.py`; edit the script rather than the SVG files.
+
+## License
+
+Released under the [MIT License](LICENSE).

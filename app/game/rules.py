@@ -31,9 +31,13 @@ STATUS_SERIES_OVER = "series_over"
 class GameError(Exception):
     """Ação inválida; `message` é exibida ao usuário."""
 
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-        self.message = message
+    def __init__(self, message: str, **params: object) -> None:
+        # `template` é o texto-fonte em pt-BR (chave de tradução em app/i18n.py); `message` já formatado em pt-BR.
+        text = message.format(**params) if params else message
+        super().__init__(text)
+        self.template = message
+        self.params = params
+        self.message = text
 
 
 def other(side: Side) -> Side:
@@ -348,7 +352,7 @@ class Room:
             raise GameError("Não é a sua vez de perguntar.")
         text = text.strip() if isinstance(text, str) else ""
         if not 1 <= len(text) <= QUESTION_MAX:
-            raise GameError(f"A pergunta deve ter entre 1 e {QUESTION_MAX} caracteres.")
+            raise GameError("A pergunta deve ter entre 1 e {max} caracteres.", max=QUESTION_MAX)
         m.pending_question = {"text": text, "asker_id": player_id}
         m.phase = "answering"
         ans_side = other(m.turn_side)
@@ -530,7 +534,7 @@ class Room:
         p = self._player(player_id)
         text = text.strip() if isinstance(text, str) else ""
         if not 1 <= len(text) <= CHAT_MAX:
-            raise GameError(f"A mensagem deve ter entre 1 e {CHAT_MAX} caracteres.")
+            raise GameError("A mensagem deve ter entre 1 e {max} caracteres.", max=CHAT_MAX)
         while p.chat_times and now - p.chat_times[0] >= CHAT_WINDOW_MS:
             p.chat_times.popleft()
         if len(p.chat_times) >= CHAT_LIMIT:
@@ -628,6 +632,7 @@ class Room:
             "code": self.code,
             "name": self.name,
             "mode": self.mode,
+            "theme_id": self.settings.theme_id,
             "theme_name": self.settings.theme_name,
             "players": self.connected_count(),
             "max_players": MAX_PLAYERS,

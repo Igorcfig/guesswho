@@ -1,6 +1,6 @@
 import {
   COLORS, getIdentity, saveIdentity, cleanName, colorPicker, api, toast, h, initials,
-  roomUrl, normalizeCode, CODE_RE,
+  roomUrl, normalizeCode, CODE_RE, t, onLangChange, roomDisplayName, themeDisplayName,
 } from './common.js';
 
 const $ = (id) => document.getElementById(id);
@@ -32,7 +32,7 @@ $('profile-form').addEventListener('submit', (e) => e.preventDefault());
 function requireName() {
   const name = cleanName(nick.value);
   if (!name) {
-    toast('Escolha um apelido antes de jogar.', 'error');
+    toast(t('home.need_name'), 'error');
     nick.focus();
     nick.setAttribute('aria-invalid', 'true');
     return null;
@@ -58,7 +58,7 @@ async function withBusy(btn, fn) {
 async function createRoom(isPublic) {
   const name = requireName();
   if (!name) return;
-  const data = await api('/api/rooms', { method: 'POST', json: { name: `Sala de ${name}`.slice(0, 40), public: isPublic } });
+  const data = await api('/api/rooms', { method: 'POST', json: { name: t('home.room_of', { name }).slice(0, 40), public: isPublic } });
   location.href = roomUrl(data.code);
 }
 
@@ -77,7 +77,7 @@ $('join-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const code = normalizeCode(codeInput.value);
   if (!CODE_RE.test(code)) {
-    toast('O código tem 4 letras ou números, como K7Q2.', 'error');
+    toast(t('home.bad_code'), 'error');
     codeInput.setAttribute('aria-invalid', 'true');
     codeInput.focus();
     return;
@@ -101,54 +101,60 @@ function colorFor(code) {
 }
 
 function renderRooms(rooms) {
-  countEl.textContent = rooms.length === 1 ? '1 sala · atualiza sozinho' : `${rooms.length} salas · atualiza sozinho`;
+  countEl.textContent = rooms.length === 1 ? t('home.rooms_one') : t('home.rooms_n', { n: rooms.length });
   if (!rooms.length) {
     list.replaceChildren(h('div', { class: 'rooms-empty' },
-      h('strong', {}, 'Nenhuma sala aberta agora.'),
-      h('span', {}, 'Crie uma sala ou clique em "Jogar agora" para abrir a primeira.')));
+      h('strong', {}, t('home.none')),
+      h('span', {}, t('home.none_hint'))));
     return;
   }
   list.replaceChildren(...rooms.map((r) => {
     const full = r.players >= (r.max_players || 12);
-    const name = r.name || `Sala ${r.code}`;
-    const status = r.status === 'playing' ? 'em partida' : 'esperando';
-    const mode = r.mode === 'team' ? 'Time x Time' : 'Duelo';
+    const name = roomDisplayName(r.name, r.code);
+    const status = r.status === 'playing' ? t('home.playing') : t('home.waiting');
+    const mode = r.mode === 'team' ? t('home.mode_team') : t('home.mode_duel');
     const enter = h('a', {
-      class: 'btn btn-yellow btn-sm', href: roomUrl(r.code), 'aria-label': `Entrar na sala ${name}`,
-    }, 'Entrar');
+      class: 'btn btn-yellow btn-sm', href: roomUrl(r.code), 'aria-label': t('home.enter_room', { name }),
+    }, t('home.enter'));
     enter.addEventListener('click', (e) => { if (!requireName()) e.preventDefault(); });
     return h('article', { class: 'room-row' },
       h('span', { class: 'room-initial', style: { background: colorFor(r.code) }, 'aria-hidden': 'true' }, initials(name)),
       h('div', { class: 'room-info' },
         h('span', { class: 'room-name' }, name),
-        h('span', { class: 'room-meta' }, `Tema: ${r.theme_name || 'Clássico'} · ${mode} · ${status}`)),
-      h('span', { class: 'room-players', 'aria-label': `${r.players} de ${r.max_players || 12} pessoas` }, `${r.players}/${r.max_players || 12}`),
-      full ? h('span', { class: 'btn btn-sm btn-disabled', 'aria-disabled': 'true' }, 'Lotada') : enter);
+        h('span', { class: 'room-meta' }, t('home.meta', { theme: themeDisplayName(r.theme_id || (r.theme_name ? '' : 'classic'), r.theme_name), mode, status }))),
+      h('span', { class: 'room-players', 'aria-label': t('home.people', { n: r.players, max: r.max_players || 12 }) }, `${r.players}/${r.max_players || 12}`),
+      full ? h('span', { class: 'btn btn-sm btn-disabled', 'aria-disabled': 'true' }, t('home.full')) : enter);
   }));
 }
 
 let loadedOnce = false;
+let lastRooms = null;
 async function loadRooms() {
   if (document.hidden && loadedOnce) return;
   try {
     const rooms = await api('/api/rooms');
     loadedOnce = true;
-    renderRooms(Array.isArray(rooms) ? rooms : []);
+    lastRooms = Array.isArray(rooms) ? rooms : [];
+    renderRooms(lastRooms);
   } catch {
     if (!loadedOnce) {
-      countEl.textContent = 'sem conexão';
-      list.replaceChildren(h('div', { class: 'rooms-empty' }, h('strong', {}, 'Não deu para carregar as salas.'), h('span', {}, 'Tentando de novo em instantes…')));
+      countEl.textContent = t('home.offline');
+      list.replaceChildren(h('div', { class: 'rooms-empty' }, h('strong', {}, t('home.load_fail')), h('span', {}, t('home.retrying'))));
     }
   }
 }
 loadRooms();
 setInterval(loadRooms, 5000);
+onLangChange(() => {
+  if (lastRooms) renderRooms(lastRooms);
+  else { countEl.textContent = t('home.loading'); loadRooms(); }
+});
 document.addEventListener('visibilitychange', () => { if (!document.hidden) loadRooms(); });
 
 // Aviso vindo de redirect (sala inexistente).
 const params = new URLSearchParams(location.search);
 if (params.get('erro') === 'sala_nao_encontrada' || params.get('erro') === 'sala') {
-  toast('Essa sala não existe ou já foi fechada.', 'error', 5000);
+  toast(t('home.room_gone'), 'error', 5000);
   history.replaceState(null, '', '/');
 }
 if (!me.name) nick.focus();

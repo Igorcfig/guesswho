@@ -7,6 +7,7 @@ import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.game.rules import GameError
+from app.i18n import normalize, tr
 from app.realtime.manager import manager
 
 router = APIRouter()
@@ -31,9 +32,10 @@ async def room_socket(websocket: WebSocket, code: str) -> None:
         return
 
     params = websocket.query_params
+    lang = normalize(params.get("lang") or websocket.cookies.get("lang"))
     player_id = params.get("player_id", "")
     if not _valid_uuid(player_id):
-        await websocket.send_json({"type": "error", "message": "Identificador de jogador inválido."})
+        await websocket.send_json({"type": "error", "message": tr("Identificador de jogador inválido.", lang)})
         await websocket.close(code=4400, reason="player_id inválido")
         return
     name = (params.get("name") or "").strip()[:20] or "Jogador"
@@ -42,9 +44,9 @@ async def room_socket(websocket: WebSocket, code: str) -> None:
         color = PLAYER_COLORS[0]
 
     try:
-        await manager.attach(session, player_id, name, color, websocket)
+        await manager.attach(session, player_id, name, color, websocket, lang)
     except GameError as exc:
-        await websocket.send_json({"type": "error", "message": exc.message})
+        await websocket.send_json({"type": "error", "message": tr(exc.template, lang, **exc.params)})
         await websocket.close(code=4409, reason="Sala cheia")
         return
 
@@ -54,7 +56,7 @@ async def room_socket(websocket: WebSocket, code: str) -> None:
             try:
                 msg = json.loads(raw)
             except ValueError:
-                await manager.send_error(websocket, "Mensagem inválida.")
+                await manager.send_error(websocket, tr("Mensagem inválida.", session.langs.get(player_id)))
                 continue
             await manager.handle(session, player_id, websocket, msg)
     except WebSocketDisconnect:

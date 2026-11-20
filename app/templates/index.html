@@ -1,27 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Cara a Cara · Início{% endblock %}
+{% block title %}{{ t('title.home') }}{% endblock %}
 {% block body_class %}page-home{% endblock %}
+{% block body_attrs %} data-title-key="title.home"{% endblock %}
 {% block content %}
 <header class="site-header wrap">
-  <a class="brand" href="/" aria-label="Cara a Cara, voltar ao início">
+  <a class="brand" href="/" aria-label="{{ t('brand.home') }}" data-i18n-attr="aria-label:brand.home">
     <img class="brand-logo" src="/static/img/logo.svg" alt="" width="44" height="44">
     <span class="brand-name">Cara a Cara</span>
   </a>
-  <nav class="site-nav" aria-label="Principal">
-    <a href="#como-jogar">Como jogar</a>
-    <a href="/temas/novo">Criar tema</a>
+  <nav class="site-nav" aria-label="{{ t('home.nav') }}" data-i18n-attr="aria-label:home.nav">
+    <a href="#como-jogar" data-i18n="home.how">{{ t('home.how') }}</a>
+    <a href="/temas/novo" data-i18n="home.create_theme">{{ t('home.create_theme') }}</a>
+    <a class="nav-github" href="{{ repo_url }}" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg><span>GitHub</span></a>
   </nav>
+  {% include "_lang_switch.html" %}
 </header>
 
 <main id="conteudo" class="home-main wrap">
   <section class="card hero" aria-labelledby="hero-title">
-    <h1 id="hero-title">Adivinhe quem é<br>antes dos amigos.</h1>
-    <p class="lead">Perguntas de sim ou não, um personagem secreto e uma sala cheia de gente chutando.</p>
+    <h1 id="hero-title" data-i18n-html="home.hero">{{ t('home.hero')|safe }}</h1>
+    <p class="lead" data-i18n="home.lead">{{ t('home.lead') }}</p>
 
     <form id="profile-form" class="profile" novalidate>
       <div class="profile-row">
         <div class="avatar-big-wrap">
-          <svg id="avatar-svg" class="avatar-big" viewBox="0 0 64 64" width="96" height="96" role="img" aria-label="Seu avatar">
+          <svg id="avatar-svg" class="avatar-big" viewBox="0 0 64 64" width="96" height="96" role="img" aria-label="{{ t('home.avatar') }}" data-i18n-attr="aria-label:home.avatar">
             <rect id="avatar-bg" width="64" height="64" rx="16" fill="#FFC93C"></rect>
             <path d="M12 64 C12 46 52 46 52 64 Z" fill="#1B1446" opacity=".85"></path>
             <circle cx="32" cy="30" r="14" fill="#F2C29B"></circle>
@@ -30,49 +33,56 @@
             <circle cx="37" cy="30" r="1.8" fill="#1B1446"></circle>
             <path d="M27 36 Q32 40 37 36" stroke="#1B1446" stroke-width="2" fill="none" stroke-linecap="round"></path>
           </svg>
-          <button type="button" id="avatar-next" class="avatar-swap" aria-label="Trocar cor do avatar">
+          <button type="button" id="avatar-next" class="avatar-swap" aria-label="{{ t('home.avatar_swap') }}" data-i18n-attr="aria-label:home.avatar_swap">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>
           </button>
         </div>
         <div class="field grow">
-          <label for="nick">Seu apelido</label>
-          <input id="nick" class="input input-lg" name="nick" maxlength="20" autocomplete="nickname" placeholder="Como te chamam?" required>
-          <div class="swatches" id="colors" aria-label="Cor do avatar"></div>
+          <label for="nick" data-i18n="home.nick">{{ t('home.nick') }}</label>
+          <input id="nick" class="input input-lg" name="nick" maxlength="20" autocomplete="nickname" placeholder="{{ t('home.nick_ph') }}" data-i18n-attr="placeholder:home.nick_ph" required>
+          <div class="swatches" id="colors" aria-label="{{ t('home.avatar_color') }}" data-i18n-attr="aria-label:home.avatar_color"></div>
         </div>
       </div>
     </form>
 
     <div class="btn-row-2">
-      <button type="button" id="play-now" class="btn btn-primary btn-xl">Jogar agora</button>
-      <button type="button" id="create-room" class="btn btn-dark btn-xl">Criar sala</button>
+      <button type="button" id="play-now" class="btn btn-primary btn-xl" data-i18n="home.play_now">{{ t('home.play_now') }}</button>
+      <button type="button" id="create-room" class="btn btn-dark btn-xl" data-i18n="home.create_room">{{ t('home.create_room') }}</button>
     </div>
 
     <form id="join-form" class="join-row" novalidate>
       <div class="field grow">
-        <label for="code">Tem um código?</label>
-        <input id="code" class="input input-lg input-code" maxlength="4" placeholder="Ex.: K7Q2" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint">
-        <span id="code-hint" class="sr-only">4 letras ou números</span>
+        <label for="code" data-i18n="home.code">{{ t('home.code') }}</label>
+        <input id="code" class="input input-lg input-code" maxlength="4" placeholder="{{ t('home.code_ph') }}" data-i18n-attr="placeholder:home.code_ph" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint">
+        <span id="code-hint" class="sr-only" data-i18n="home.code_hint">{{ t('home.code_hint') }}</span>
       </div>
-      <button type="submit" class="btn btn-outline-dark btn-lg">Entrar</button>
+      <button type="submit" class="btn btn-outline-dark btn-lg" data-i18n="home.join">{{ t('home.join') }}</button>
     </form>
   </section>
 
   <section class="rooms" aria-labelledby="rooms-title">
     <div class="rooms-head">
-      <h2 id="rooms-title">Salas abertas</h2>
-      <span id="rooms-count" class="muted-strong">carregando…</span>
+      <h2 id="rooms-title" data-i18n="home.rooms">{{ t('home.rooms') }}</h2>
+      <span id="rooms-count" class="muted-strong">{{ t('home.loading') }}</span>
     </div>
     <div id="rooms-list" class="rooms-list" aria-live="polite"></div>
   </section>
 </main>
 
 <section id="como-jogar" class="steps-band" aria-labelledby="steps-title">
-  <h2 id="steps-title" class="sr-only">Como jogar</h2>
+  <h2 id="steps-title" class="sr-only" data-i18n="home.how">{{ t('home.how') }}</h2>
   <ol class="steps wrap">
-    <li><span class="step-n">1</span><div><strong>Entre numa sala</strong><span>Crie uma sala e mande o link, ou entre com o código.</span></div></li>
-    <li><span class="step-n">2</span><div><strong>Pergunte e elimine</strong><span>Na sua vez, faça uma pergunta de sim ou não e vire as cartas.</span></div></li>
-    <li><span class="step-n">3</span><div><strong>Chute e pontue</strong><span>Acertou o personagem secreto do outro lado? Ponto para você. Errou, ponto para eles.</span></div></li>
+    <li><span class="step-n">1</span><div><strong data-i18n="home.step1_t">{{ t('home.step1_t') }}</strong><span data-i18n="home.step1_d">{{ t('home.step1_d') }}</span></div></li>
+    <li><span class="step-n">2</span><div><strong data-i18n="home.step2_t">{{ t('home.step2_t') }}</strong><span data-i18n="home.step2_d">{{ t('home.step2_d') }}</span></div></li>
+    <li><span class="step-n">3</span><div><strong data-i18n="home.step3_t">{{ t('home.step3_t') }}</strong><span data-i18n="home.step3_d">{{ t('home.step3_d') }}</span></div></li>
   </ol>
 </section>
+
+<footer class="site-footer">
+  <div class="wrap site-footer-inner">
+    <span data-i18n="home.footer">{{ t('home.footer') }}</span>
+    <a class="nav-github" href="{{ repo_url }}" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg><span data-i18n="home.github">{{ t('home.github') }}</span></a>
+  </div>
+</footer>
 {% endblock %}
 {% block scripts %}<script type="module" src="/static/js/home.js"></script>{% endblock %}

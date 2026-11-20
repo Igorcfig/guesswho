@@ -1,5 +1,7 @@
 // Editor de tema: envia multipart para POST /api/themes.
-import { getIdentity, saveIdentity, cleanName, api, toast, h, icon, rememberTheme, roomUrl } from './common.js';
+import {
+  getIdentity, saveIdentity, cleanName, api, toast, h, icon, rememberTheme, roomUrl, t, onLangChange,
+} from './common.js';
 
 const $ = (id) => document.getElementById(id);
 const MIN = 12;
@@ -31,12 +33,12 @@ function addFiles(fileList) {
   const problems = [];
   let skippedForLimit = 0;
   for (const file of files) {
-    if (!TYPES.includes(file.type)) { problems.push(`"${file.name}" não é PNG, JPG ou WEBP.`); continue; }
-    if (file.size > MAX_BYTES) { problems.push(`"${file.name}" tem mais de 2 MB.`); continue; }
+    if (!TYPES.includes(file.type)) { problems.push(t('th.bad_type', { file: file.name })); continue; }
+    if (file.size > MAX_BYTES) { problems.push(t('th.too_big', { file: file.name })); continue; }
     if (items.length >= MAX) { skippedForLimit += 1; continue; }
     addItem(file);
   }
-  if (skippedForLimit) problems.push(`O tema aceita no máximo ${MAX} personagens; ${skippedForLimit} foto(s) ficaram de fora.`);
+  if (skippedForLimit) problems.push(t('th.over_limit', { max: MAX, n: skippedForLimit }));
   if (problems.length) toast(problems.join(' '), 'error', 6000);
   update();
 }
@@ -47,12 +49,12 @@ function addItem(file) {
   const idx = items.length;
   const input = h('input', {
     class: 'input input-sm', maxlength: '20', value: nameFromFile(file), id: `name-${key}`,
-    'aria-label': `Nome do personagem ${idx + 1}`, autocomplete: 'off', required: true,
+    'aria-label': t('th.char_name', { n: idx + 1 }), autocomplete: 'off', required: true,
   });
-  const removeBtn = h('button', { type: 'button', class: 'remove-btn', 'aria-label': 'Remover personagem' }, icon('close', 14, 3));
+  const removeBtn = h('button', { type: 'button', class: 'remove-btn', 'aria-label': t('th.remove_char') }, icon('close', 14, 3));
   const el = h('div', { class: 'theme-item', dataset: { key } },
     h('div', { class: 'theme-thumb', style: { background: BGS[seq % BGS.length] } }, h('img', { src: url, alt: '' })),
-    h('label', { class: 'theme-item-label', for: `name-${key}` }, 'Nome'),
+    h('label', { class: 'theme-item-label', for: `name-${key}` }, t('th.name')),
     input,
     removeBtn);
   const item = { key, file, url, el, input };
@@ -72,9 +74,10 @@ function addItem(file) {
 
 function updateLabels() {
   items.forEach((it, i) => {
-    const n = cleanName(it.input.value) || `personagem ${i + 1}`;
-    it.el.querySelector('.remove-btn').setAttribute('aria-label', `Remover ${n}`);
-    it.input.setAttribute('aria-label', `Nome do personagem ${i + 1}`);
+    const n = cleanName(it.input.value) || t('th.char_n', { n: i + 1 });
+    it.el.querySelector('.remove-btn').setAttribute('aria-label', t('th.remove', { name: n }));
+    it.input.setAttribute('aria-label', t('th.char_name', { n: i + 1 }));
+    it.el.querySelector('.theme-item-label').textContent = t('th.name');
   });
 }
 
@@ -82,15 +85,17 @@ function update() {
   const n = items.length;
   $('t-count').textContent = `${n} / ${MAX}`;
   $('t-count').classList.toggle('is-ok', n >= MIN);
-  $('t-count-hint').textContent = n < MIN ? `mínimo de ${MIN} personagens · faltam ${MIN - n}` : (n === MAX ? 'tema completo!' : `pode ter até ${MAX}`);
+  $('t-count-hint').textContent = n < MIN ? t('th.min_left', { min: MIN, n: MIN - n }) : (n === MAX ? t('th.complete') : t('th.up_to', { max: MAX }));
   dropzone.hidden = n >= MAX;
   updateLabels();
 }
 
-function showErrors(list) {
+let lastErrors = null;
+function showErrors(list, scroll = true, fromServer = false) {
+  lastErrors = { list, fromServer };
   errorsBox.replaceChildren(...(list.length > 1 ? [h('ul', {}, list.map((e) => h('li', {}, e)))] : list.map((e) => h('p', {}, e))));
   errorsBox.hidden = !list.length;
-  if (list.length) errorsBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (list.length && scroll) errorsBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function validate() {
@@ -100,10 +105,10 @@ function validate() {
   for (const [el, bad] of [[$('t-name'), !name], [$('t-author'), !author]]) {
     if (bad) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
   }
-  if (!name) errs.push('Dê um nome ao tema (até 40 caracteres).');
-  if (!author) errs.push('Diga quem é o autor (até 20 caracteres).');
-  if (items.length < MIN) errs.push(`Adicione pelo menos ${MIN} personagens (faltam ${MIN - items.length}).`);
-  if (items.length > MAX) errs.push(`No máximo ${MAX} personagens.`);
+  if (!name) errs.push(t('th.err_name'));
+  if (!author) errs.push(t('th.err_author'));
+  if (items.length < MIN) errs.push(t('th.err_min', { min: MIN, n: MIN - items.length }));
+  if (items.length > MAX) errs.push(t('th.err_max', { max: MAX }));
   const seen = new Map();
   let emptyCount = 0;
   const dups = new Set();
@@ -118,8 +123,8 @@ function validate() {
       seen.get(k).input.setAttribute('aria-invalid', 'true');
     } else seen.set(k, it);
   }
-  if (emptyCount) errs.push(emptyCount === 1 ? 'Um personagem está sem nome.' : `${emptyCount} personagens estão sem nome.`);
-  if (dups.size) errs.push(`Nomes repetidos: ${[...dups].join(', ')}. Cada personagem precisa de um nome diferente.`);
+  if (emptyCount) errs.push(emptyCount === 1 ? t('th.err_empty_one') : t('th.err_empty_n', { n: emptyCount }));
+  if (dups.size) errs.push(t('th.err_dups', { names: [...dups].join(', ') }));
   return errs;
 }
 
@@ -146,17 +151,17 @@ $('theme-form').addEventListener('submit', async (e) => {
   sending = true;
   const btn = $('save-btn');
   btn.disabled = true;
-  btn.textContent = 'Salvando…';
+  btn.textContent = t('th.saving');
   try {
     const res = await api('/api/themes', { method: 'POST', body: fd });
     createdId = res.id;
     rememberTheme({ id: res.id, name, count: items.length });
     done(name, $('t-public').value !== 'false');
   } catch (err) {
-    showErrors([err.message]);
+    showErrors([err.message], true, true);
     toast(err.message, 'error', 6000);
     btn.disabled = false;
-    btn.textContent = 'Salvar tema';
+    btn.textContent = t('th.save');
   } finally {
     sending = false;
   }
@@ -166,13 +171,12 @@ function done(name, isPublic) {
   document.querySelector('.theme-card').hidden = true;
   $('save-btn').hidden = true;
   $('add-files').hidden = true;
-  $('done-text').textContent = isPublic
-    ? `"${name}" já aparece na lista de temas das salas. Escolha-o nas configurações do lobby.`
-    : `"${name}" é privado: só aparece para você neste navegador e para quem entrar numa sala que o use.`;
+  doneInfo = { name, isPublic };
+  renderDoneText();
   const sec = $('t-done');
   sec.hidden = false;
   sec.focus();
-  toast('Tema salvo!', 'success');
+  toast(t('th.saved'), 'success');
 }
 
 $('done-room').addEventListener('click', async (e) => {
@@ -181,7 +185,7 @@ $('done-room').addEventListener('click', async (e) => {
   try {
     const nick = getIdentity().name || cleanName($('t-author').value);
     if (nick) saveIdentity({ name: nick });
-    const r = await api('/api/rooms', { method: 'POST', json: { name: nick ? `Sala de ${nick}` : null, public: false } });
+    const r = await api('/api/rooms', { method: 'POST', json: { name: nick ? t('home.room_of', { name: nick }).slice(0, 40) : null, public: false } });
     location.href = `${roomUrl(r.code)}?tema=${encodeURIComponent(createdId)}`;
   } catch (err) {
     toast(err.message, 'error');
@@ -219,4 +223,16 @@ window.addEventListener('drop', (e) => {
   if (!createdId) addFiles(e.dataTransfer.files);
 });
 
+let doneInfo = null;
+function renderDoneText() {
+  if (!doneInfo) return;
+  $('done-text').textContent = t(doneInfo.isPublic ? 'th.done_public' : 'th.done_private', { name: doneInfo.name });
+}
+
 update();
+onLangChange(() => {
+  update();
+  renderDoneText();
+  if (!errorsBox.hidden && lastErrors) showErrors(lastErrors.fromServer ? lastErrors.list : validate(), false);
+  $('save-btn').textContent = sending ? t('th.saving') : t('th.save');
+});
