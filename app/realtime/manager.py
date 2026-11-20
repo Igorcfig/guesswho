@@ -12,6 +12,7 @@ from typing import Any
 from starlette.websockets import WebSocket, WebSocketState
 
 from app.game.rules import GameError, Room
+from app.i18n import DEFAULT_LANG, SUPPORTED, tr
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class RoomSession:
     def __init__(self, room: Room) -> None:
         self.room = room
         self.connections: dict[str, WebSocket] = {}
+        self.langs: dict[str, str] = {}  # idioma das mensagens de erro de cada jogador ("pt"/"en")
         self.timer_task: asyncio.Task[None] | None = None
         self.cleanup_task: asyncio.Task[None] | None = None
         self.lock = asyncio.Lock()
@@ -66,9 +68,12 @@ class RoomManager:
         ]
 
     # ---------------------------------------------------------- conexões
-    async def attach(self, session: RoomSession, player_id: str, name: str, color: str, ws: WebSocket) -> None:
+    async def attach(
+        self, session: RoomSession, player_id: str, name: str, color: str, ws: WebSocket, lang: str = DEFAULT_LANG,
+    ) -> None:
         """Registra a conexão (substituindo uma anterior do mesmo jogador)."""
         session.room.connect(player_id, name, color, self.clock())  # pode levantar GameError
+        session.langs[player_id] = lang
         old = session.connections.get(player_id)
         session.connections[player_id] = ws
         if old is not None and old is not ws:
@@ -166,6 +171,12 @@ class RoomManager:
                 raise GameError("Mensagem inválida.")
             kind = msg["type"]
             now = self.clock()
+            if kind == "set_lang":
+                lang = msg.get("lang")
+                if lang not in SUPPORTED:
+                    raise GameError("Idioma inválido.")
+                session.langs[player_id] = lang
+                return
             if kind == "chat":
                 result = room.chat(player_id, msg.get("text"), now)
                 await self.send_to(session, result.recipients, result.message)
@@ -213,7 +224,7 @@ class RoomManager:
             else:
                 raise GameError("Ação desconhecida.")
         except GameError as exc:
-            await self.send_error(ws, exc.message)
+            await self.send_error(ws, tr(exc.template, session.langs.get(player_id), **exc.params))
             return
         await self.after_change(session)
 

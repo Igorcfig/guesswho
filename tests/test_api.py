@@ -46,7 +46,7 @@ def test_list_public_rooms_only_with_players(client):
             ws2.receive_json()
             rooms = client.get("/api/rooms").json()
     assert rooms == [{
-        "code": pub, "name": "Pública", "mode": "duel", "theme_name": "Clássico",
+        "code": pub, "name": "Pública", "mode": "duel", "theme_id": "classic", "theme_name": "Clássico",
         "players": 1, "max_players": 12, "status": "lobby",
     }]
 

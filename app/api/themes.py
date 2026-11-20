@@ -15,6 +15,7 @@ from starlette.datastructures import UploadFile
 from app import config
 from app.classic import CLASSIC_AUTHOR, CLASSIC_CHARACTERS, CLASSIC_ID, CLASSIC_NAME
 from app.db import SessionLocal, get_db
+from app.i18n import request_lang, tr
 from app.models import Character, Theme
 
 router = APIRouter(prefix="/api/themes", tags=["themes"])
@@ -61,8 +62,9 @@ def _detect_image(data: bytes) -> str | None:
     return None
 
 
-def _error(message: str) -> JSONResponse:
-    return JSONResponse(status_code=422, content={"detail": message})
+def _error(request: Request, message: str, **params: Any) -> JSONResponse:
+    """Erro 422 com `detail` no idioma do cookie `lang` (a mensagem-fonte é pt-BR)."""
+    return JSONResponse(status_code=422, content={"detail": tr(message, request_lang(request), **params)})
 
 
 @router.get("")
@@ -112,7 +114,7 @@ async def create_theme(request: Request, db: Session = Depends(get_db)) -> JSONR
     try:
         form = await request.form(max_files=MAX_CHARS + 10, max_fields=MAX_CHARS * 2 + 20)
     except Exception:
-        return _error("Não foi possível ler o formulário enviado.")
+        return _error(request, "Não foi possível ler o formulário enviado.")
 
     name = str(form.get("name") or "").strip()
     author = str(form.get("author") or "").strip()
@@ -121,33 +123,33 @@ async def create_theme(request: Request, db: Session = Depends(get_db)) -> JSONR
     images = form.getlist("images")
 
     if not 1 <= len(name) <= 40:
-        return _error("O nome do tema deve ter entre 1 e 40 caracteres.")
+        return _error(request, "O nome do tema deve ter entre 1 e 40 caracteres.")
     if not 1 <= len(author) <= 20:
-        return _error("O nome do autor deve ter entre 1 e 20 caracteres.")
+        return _error(request, "O nome do autor deve ter entre 1 e 20 caracteres.")
     if public_raw not in ("true", "false"):
-        return _error("O campo 'público' deve ser true ou false.")
+        return _error(request, "O campo 'público' deve ser true ou false.")
     if len(names) != len(images):
-        return _error("Cada personagem precisa de um nome e uma imagem.")
+        return _error(request, "Cada personagem precisa de um nome e uma imagem.")
     if not MIN_CHARS <= len(names) <= MAX_CHARS:
-        return _error(f"O tema precisa ter entre {MIN_CHARS} e {MAX_CHARS} personagens.")
+        return _error(request, "O tema precisa ter entre {min} e {max} personagens.", min=MIN_CHARS, max=MAX_CHARS)
     seen: set[str] = set()
     for i, n in enumerate(names, start=1):
         if not 1 <= len(n) <= 20:
-            return _error(f"O nome do personagem {i} deve ter entre 1 e 20 caracteres.")
+            return _error(request, "O nome do personagem {i} deve ter entre 1 e 20 caracteres.", i=i)
         if n.casefold() in seen:
-            return _error(f"O nome \"{n}\" está repetido. Cada personagem precisa de um nome único.")
+            return _error(request, "O nome \"{name}\" está repetido. Cada personagem precisa de um nome único.", name=n)
         seen.add(n.casefold())
 
     blobs: list[tuple[bytes, str]] = []
     for i, img in enumerate(images, start=1):
         if not isinstance(img, UploadFile):
-            return _error(f"A imagem do personagem {i} não foi enviada.")
+            return _error(request, "A imagem do personagem {i} não foi enviada.", i=i)
         data = await img.read(MAX_IMAGE_BYTES + 1)
         if len(data) > MAX_IMAGE_BYTES:
-            return _error(f"A imagem do personagem {i} passa de 2 MB.")
+            return _error(request, "A imagem do personagem {i} passa de 2 MB.", i=i)
         ext = _detect_image(data)
         if ext is None:
-            return _error(f"A imagem do personagem {i} precisa ser PNG, JPEG ou WEBP.")
+            return _error(request, "A imagem do personagem {i} precisa ser PNG, JPEG ou WEBP.", i=i)
         blobs.append((data, ext))
 
     theme_id = uuid.uuid4().hex

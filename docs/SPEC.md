@@ -1,7 +1,7 @@
 # Cara a Cara — Especificação técnica (contrato entre Backend e Frontend)
 
 Jogo web multiplayer inspirado em "Cara a Cara" (Guess Who?), com salas estilo Gartic.
-Visual e personagens são 100% originais. Toda a UI é em **português do Brasil**.
+Visual e personagens são 100% originais. A UI é em **português do Brasil** (padrão) e **inglês** (ver "Notas de i18n").
 
 ## Stack
 - Python 3.12, **FastAPI** + Uvicorn, WebSockets nativos do Starlette.
@@ -192,3 +192,21 @@ Decisões tomadas onde o SPEC era omisso (o contrato acima não muda):
 - `state` traz `server_now` (epoch ms do servidor no envio); o timer usa `deadline - server_now`.
 - `match.down_counts` = `{"A": n, "B": n}`: quantas cartas cada lado virou (visível a todos, sem revelar quais).
 - Banco: o app monta a URL a partir de `POSTGRES_USER/PASSWORD/HOST/PORT/DB` (escape via `sqlalchemy.engine.URL.create`); `DATABASE_URL` explícita tem prioridade; sem nenhuma, usa SQLite.
+
+## Notas de i18n (pt-BR padrão + en)
+- **Idioma escolhido**: cookie `lang` (`pt`|`en`, `path=/`, 1 ano, `SameSite=Lax`) + `localStorage` (`cac_lang`). Sem
+  cookie o padrão é sempre `pt` (o servidor **não** usa `Accept-Language`). O seletor (duas bandeiras SVG, botões com
+  `aria-label` "Português"/"English" e `aria-pressed`) está no cabeçalho de todas as páginas.
+- **Servidor** (`app/i18n.py`): `MESSAGES` usa o texto pt-BR como chave (fonte) e traz a tradução en; `tr(msg, lang, **params)`.
+  `PAGES` traz os textos dos templates por chave; nos templates, `t(key, **params)` usa o cookie da requisição e
+  `<html lang>` sai `pt-BR`/`en`. `base.html` embute `PAGES` (os dois idiomas) em `<script id="i18n-pages" type="application/json">`
+  para o cliente trocar de idioma **sem recarregar** (elementos marcados com `data-i18n`, `data-i18n-html`, `data-i18n-attr`).
+- **API**: `detail` dos erros sai no idioma do cookie `lang` (padrão pt-BR).
+- **WebSocket** (adições ao contrato): query opcional `lang=pt|en` em `/ws/{code}` (sem ela, vale o cookie; senão pt).
+  Nova mensagem cliente → servidor `{"type":"set_lang","lang":"pt"|"en"}` (qualquer um, a qualquer momento; não gera
+  `state`; valor inválido → erro "Idioma inválido."). Mensagens `{"type":"error","message"}` saem no idioma do jogador.
+  `GameError(template, **params)` guarda o texto-fonte pt-BR em `template` (e `message` já formatado em pt-BR).
+- **Dados não são traduzidos no servidor**: `theme_name` continua "Clássico" e o nome padrão da sala continua `"Sala " + code`;
+  o cliente exibe "Classic"/"Room K7Q2" em inglês. `GET /api/rooms` passou a incluir `theme_id` (aditivo).
+- **Cliente** (`app/static/js/i18n.js`): `t(key, vars)` com interpolação `{var}`, `setLang()`, `onLangChange()`. Na sala,
+  a troca re-renderiza a partir do último snapshot e envia `set_lang`; a conexão WS (e o lugar do jogador) não cai.

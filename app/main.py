@@ -10,11 +10,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from jinja2 import pass_context
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import config
 from app.api import rooms, themes
 from app.db import init_db
+from app.i18n import HTML_LANG, PAGES, page_text, request_lang, tr
 from app.realtime import ws
 from app.realtime.manager import manager
 
@@ -33,6 +35,23 @@ app.mount("/uploads", StaticFiles(directory=config.UPLOAD_DIR, check_dir=False),
 templates = Jinja2Templates(directory=str(config.TEMPLATES_DIR))
 templates.env.globals["repo_url"] = config.REPO_URL
 
+
+@pass_context
+def _ctx_lang(ctx: dict) -> str:
+    return request_lang(ctx.get("request"))
+
+
+@pass_context
+def _ctx_t(ctx: dict, key: str, **params: object) -> str:
+    """`t(key)` nos templates: texto no idioma da requisição (cookie `lang`, padrão pt)."""
+    return page_text(key, request_lang(ctx.get("request")), **params)
+
+
+templates.env.globals["t"] = _ctx_t
+templates.env.globals["lang"] = _ctx_lang
+templates.env.globals["html_lang"] = HTML_LANG
+templates.env.globals["page_strings"] = PAGES
+
 app.include_router(rooms.router)
 app.include_router(themes.router)
 app.include_router(ws.router)
@@ -41,17 +60,18 @@ _STATUS_MESSAGES = {404: "Não encontrado.", 405: "Método não permitido."}
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
+async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     detail = exc.detail
-    # Mensagens padrão do Starlette ("Not Found" etc.) viram pt-BR.
+    # Mensagens padrão do Starlette ("Not Found" etc.) viram pt-BR (ou en, pelo cookie `lang`).
     if not isinstance(detail, str) or detail == HTTPStatus(exc.status_code).phrase:
         detail = _STATUS_MESSAGES.get(exc.status_code, "Erro na requisição.")
+    detail = tr(detail, request_lang(request))
     return JSONResponse(status_code=exc.status_code, content={"detail": detail}, headers=exc.headers)
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-    return JSONResponse(status_code=422, content={"detail": "Dados inválidos na requisição."})
+async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"detail": tr("Dados inválidos na requisição.", request_lang(request))})
 
 
 # ------------------------------------------------------------------ páginas

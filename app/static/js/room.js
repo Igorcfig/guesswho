@@ -1,8 +1,9 @@
 // Sala: lobby, partida (jogador), observador e fim de partida — tudo renderizado a partir do último snapshot `state`.
 import {
   getIdentity, saveIdentity, cleanName, colorPicker, api, toast, h, avatar, safeColor,
-  getMyThemes, normalizeCode,
+  getMyThemes, normalizeCode, t, getLang, onLangChange, roomDisplayName, themeDisplayName,
 } from './common.js';
+import { locale } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const CODE = normalizeCode(document.body.dataset.code || decodeURIComponent(location.pathname.split('/').pop() || ''));
@@ -18,7 +19,7 @@ let everConnected = false;
 
 // ======================== Conexão ========================
 function wsUrl() {
-  const q = new URLSearchParams({ player_id: me.player_id, name: me.name, color: me.color });
+  const q = new URLSearchParams({ player_id: me.player_id, name: me.name, color: me.color, lang: getLang() });
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/${encodeURIComponent(CODE)}?${q}`;
 }
 
@@ -41,7 +42,7 @@ function connect() {
     try { msg = JSON.parse(ev.data); } catch { return; }
     if (msg.type === 'state') { S = msg; render(); }
     else if (msg.type === 'chat') addChat(msg);
-    else if (msg.type === 'error') toast(msg.message || 'Ação inválida.', 'error');
+    else if (msg.type === 'error') toast(msg.message || t('r.invalid_action'), 'error');
   });
   sock.addEventListener('close', (ev) => {
     if (sock !== ws) return;
@@ -50,11 +51,11 @@ function connect() {
       return;
     }
     if (ev.code === 4000) {
-      stopWithMessage('Você abriu esta sala em outra aba ou aparelho. Esta aba foi desconectada.', 'Usar esta aba');
+      stopWithMessage('r.other_tab', 'r.use_tab');
       return;
     }
     if (ev.code === 4409) {
-      stopWithMessage('A sala está cheia (máximo de 12 pessoas).', 'Tentar de novo');
+      stopWithMessage('r.full', 'r.try_again');
       return;
     }
     if (ev.code === 4400) {
@@ -68,30 +69,40 @@ function connect() {
 function scheduleReconnect() {
   const delay = Math.min(10000, 500 * 2 ** retry) + Math.floor(Math.random() * 300);
   retry += 1;
-  setConn(everConnected ? `Conexão perdida. Reconectando em ${Math.ceil(delay / 1000)} s…` : 'Tentando conectar à sala…');
+  setConn(everConnected ? ['r.lost', { s: Math.ceil(delay / 1000) }] : ['r.connecting_room']);
   retryTimer = setTimeout(connect, delay);
 }
 
-function setConn(text, action = null) {
+// Aviso de conexão guardado como [chave, vars] para poder ser re-traduzido na troca de idioma.
+let connMsg = null;
+let connAction = null;
+function setConn(msg, action = null) {
+  connMsg = msg;
+  connAction = action;
   const el = $('conn-status');
-  el.hidden = !text;
-  el.replaceChildren(text || '');
-  if (action) el.append(' ', action);
+  el.hidden = !msg;
+  el.replaceChildren(msg ? t(msg[0], msg[1]) : '');
+  if (action) el.append(' ', h('button', { type: 'button', class: 'btn btn-white btn-sm conn-btn', onclick: action.onClick }, t(action.label)));
+}
+
+// Texto da tela de carregamento, também como [chave, vars].
+let loadingMsg = ['room.entering', { code: CODE }];
+function setLoading(key, vars) {
+  loadingMsg = [key, vars];
+  $('loading-text').textContent = t(key, vars);
 }
 
 /** Para de reconectar e mostra um aviso com botão para tentar de novo manualmente. */
-function stopWithMessage(text, label) {
+function stopWithMessage(key, label) {
   clearTimeout(retryTimer);
   ws = null;
-  const btn = h('button', { type: 'button', class: 'btn btn-white btn-sm conn-btn' }, label);
-  btn.addEventListener('click', () => { retry = 0; setConn('Conectando…'); connect(); });
-  setConn(text, btn);
-  if (!S) $('loading-text').textContent = text;
+  setConn([key], { label, onClick: () => { retry = 0; setConn(['r.connecting']); connect(); } });
+  if (!S) setLoading(key);
 }
 
 function send(obj) {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
-    toast('Sem conexão com a sala. Aguarde a reconexão.', 'error');
+    toast(t('r.no_conn'), 'error');
     return false;
   }
   ws.send(JSON.stringify(obj));
@@ -104,20 +115,20 @@ window.addEventListener('online', () => { if (!ws || ws.readyState > 1) { retry 
 const other = (side) => (side === 'A' ? 'B' : 'A');
 const players = () => (S ? S.players : []);
 const playerById = (id) => players().find((p) => p.id === id);
-const nameOf = (id) => playerById(id)?.name || 'Alguém';
+const nameOf = (id) => playerById(id)?.name || t('r.someone');
 const isDuel = () => S?.room.mode === 'duel';
 const charById = (id) => S?.match?.characters.find((c) => c.id === id);
 // Entradas `guess` do log trazem o nome chutado em `text` (aceita id também).
-const charByText = (t) => charById(t) || S?.match?.characters.find((c) => c.name === t);
+const charByText = (txt) => charById(txt) || S?.match?.characters.find((c) => c.name === txt);
 
 function sideLabel(side, short = false) {
   if (!side) return '';
   if (isDuel()) {
     const p = players().find((x) => x.side === side);
-    return p ? p.name : (side === 'A' ? 'Jogador 1' : 'Jogador 2');
+    return p ? p.name : t(side === 'A' ? 'r.p1' : 'r.p2');
   }
-  if (short) return side === 'A' ? 'Amarelo' : 'Coral';
-  return side === 'A' ? 'Time Amarelo' : 'Time Coral';
+  if (short) return t(side === 'A' ? 'r.yellow' : 'r.coral');
+  return t(side === 'A' ? 'r.team_a' : 'r.team_b');
 }
 
 function currentView() {
@@ -140,7 +151,7 @@ function render() {
     if (view === 'game') guessMode = false;
     lastView = view;
   }
-  document.title = `Cara a Cara · ${S.room.name || `Sala ${S.room.code}`}`;
+  document.title = t('r.title', { name: roomName() });
   placeChat(view);
   if (view === 'lobby') renderLobby();
   else if (view === 'game') renderGame();
@@ -160,19 +171,18 @@ function maybeApplyPendingTheme() {
 }
 
 // ======================== Lobby ========================
-const MODE_HINT = {
-  team: 'Cada time tem um segredo e um tabuleiro. Os membros se revezam para perguntar.',
-  duel: 'Dois jogadores se enfrentam; o vencedor fica na mesa e o próximo da fila entra.',
-};
+const MODE_HINT = { team: 'r.hint_team', duel: 'r.hint_duel' };
+const roomName = () => roomDisplayName(S.room.name, S.room.code);
+const themeName = () => themeDisplayName(S.room.settings.theme_id, S.room.settings.theme_name);
 
 function memberItem(p, { tag = '', compact = false, extra = '' } = {}) {
   const you = p.id === me.player_id;
   const li = h('li', { class: `member${p.connected ? '' : ' is-offline'}${compact ? ' member-compact' : ''}` },
     avatar(p.name, p.color, compact ? 'avatar-sm' : ''),
-    h('span', { class: 'member-name' }, p.name, you ? h('span', { class: 'you-tag' }, ' (você)') : null),
+    h('span', { class: 'member-name' }, p.name, you ? h('span', { class: 'you-tag' }, t('r.you_tag')) : null),
     extra ? h('span', { class: 'member-extra' }, extra) : null,
     tag ? h('span', { class: 'member-tag' }, tag) : null,
-    !p.connected ? h('span', { class: 'member-tag tag-off' }, 'OFFLINE') : null);
+    !p.connected ? h('span', { class: 'member-tag tag-off' }, t('r.offline')) : null);
   return li;
 }
 
@@ -181,9 +191,9 @@ function renderLobby() {
   const host = you.is_host;
   const duel = room.mode === 'duel';
   $('lobby-code').textContent = room.code;
-  $('lobby-room-name').textContent = room.name || `Sala ${room.code}`;
+  $('lobby-room-name').textContent = roomName();
   const hostP = playerById(room.host_id);
-  $('lobby-host-note').textContent = host ? 'Você é o anfitrião' : (hostP ? `Anfitrião: ${hostP.name}` : '');
+  $('lobby-host-note').textContent = host ? t('r.you_host') : (hostP ? t('r.host_is', { name: hostP.name }) : '');
 
   // Modo
   for (const [id, mode] of [['mode-duel', 'duel'], ['mode-team', 'team']]) {
@@ -192,21 +202,21 @@ function renderLobby() {
     b.disabled = !host;
     b.tabIndex = room.mode === mode ? 0 : -1;
   }
-  $('mode-hint').textContent = MODE_HINT[room.mode] + (host ? '' : ' Só o anfitrião muda o modo.');
+  $('mode-hint').textContent = t(MODE_HINT[room.mode]) + (host ? '' : t('r.only_host_mode'));
 
   // Lados
   for (const side of ['A', 'B']) {
     const members = players().filter((p) => p.side === side);
-    $(`side-name-${side}`).textContent = duel ? (side === 'A' ? 'Jogador 1' : 'Jogador 2') : sideLabel(side);
-    $(`side-count-${side}`).textContent = duel ? `${members.length} / 1` : (members.length === 1 ? '1 jogador' : `${members.length} jogadores`);
+    $(`side-name-${side}`).textContent = duel ? t(side === 'A' ? 'r.p1' : 'r.p2') : sideLabel(side);
+    $(`side-count-${side}`).textContent = duel ? `${members.length} / 1` : (members.length === 1 ? t('r.one_player') : t('r.n_players', { n: members.length }));
     const list = $(`side-list-${side}`);
-    list.replaceChildren(...members.map((p) => memberItem(p, { tag: p.id === room.host_id ? 'ANFITRIÃO' : '' })));
-    if (!members.length) list.append(h('li', { class: 'member-empty' }, duel ? 'Lugar vago' : 'Ninguém ainda'));
+    list.replaceChildren(...members.map((p) => memberItem(p, { tag: p.id === room.host_id ? t('r.host_tag') : '' })));
+    if (!members.length) list.append(h('li', { class: 'member-empty' }, duel ? t('r.seat_free') : t('r.nobody_yet')));
     const btn = $(`join-${side}`);
     const occupied = duel && members.some((p) => p.id !== me.player_id);
-    if (you.side === side) { btn.disabled = true; btn.textContent = duel ? 'Você está aqui' : 'Você está neste time'; }
-    else if (occupied) { btn.disabled = true; btn.textContent = 'Lugar ocupado'; }
-    else { btn.disabled = false; btn.textContent = duel ? `Jogar como ${side === 'A' ? 'Jogador 1' : 'Jogador 2'}` : `Entrar no ${sideLabel(side)}`; }
+    if (you.side === side) { btn.disabled = true; btn.textContent = duel ? t('r.you_here') : t('r.you_in_team'); }
+    else if (occupied) { btn.disabled = true; btn.textContent = t('r.seat_taken'); }
+    else { btn.disabled = false; btn.textContent = duel ? t('r.play_as', { who: t(side === 'A' ? 'r.p1' : 'r.p2') }) : t(side === 'A' ? 'r.join_team_a' : 'r.join_team_b'); }
   }
 
   // Observadores (no duelo, em ordem de fila)
@@ -218,23 +228,22 @@ function renderLobby() {
   $('obs-count').textContent = String(watchers.length);
   $('obs-list').replaceChildren(...watchers.map((p) => {
     const pos = queue.indexOf(p.id);
-    return memberItem(p, { compact: true, tag: p.id === room.host_id ? 'ANFITRIÃO' : '', extra: duel && pos >= 0 ? `${pos + 1}º na fila` : '' });
+    return memberItem(p, { compact: true, tag: p.id === room.host_id ? t('r.host_tag') : '', extra: duel && pos >= 0 ? t('r.queue_pos', { n: pos + 1 }) : '' });
   }));
-  if (!watchers.length) $('obs-list').append(h('li', { class: 'member-empty' }, 'Ninguém assistindo'));
+  if (!watchers.length) $('obs-list').append(h('li', { class: 'member-empty' }, t('r.nobody_watching')));
   const ob = $('join-obs');
   ob.disabled = !you.side;
-  ob.textContent = you.side ? 'Virar observador' : 'Você está assistindo';
-  $('obs-hint').textContent = duel
-    ? 'Quem assiste entra na fila e joga contra o vencedor. O chat dos observadores não chega aos jogadores.'
-    : 'Quem não escolhe lado assiste aos dois tabuleiros. O chat dos observadores não chega aos jogadores.';
+  ob.textContent = you.side ? t('r.become_spec') : t('r.watching');
+  $('obs-hint').textContent = duel ? t('r.spec_hint_duel') : t('r.spec_hint_team');
 
   // Configurações
   const st = room.settings;
   renderThemeSelect();
   const turn = $('set-turn');
   if (![...turn.options].some((o) => o.value === String(st.turn_seconds))) {
-    turn.append(h('option', { value: String(st.turn_seconds) }, `${st.turn_seconds} segundos`));
+    turn.append(h('option', { value: String(st.turn_seconds) }));
   }
+  for (const o of turn.options) o.textContent = t('room.secs', { n: o.value });
   turn.value = String(st.turn_seconds);
   $('set-best').value = String(st.best_of);
   $('best-field').hidden = duel;
@@ -246,8 +255,8 @@ function renderLobby() {
   start.hidden = !host;
   start.disabled = !ready;
   $('start-hint').textContent = host
-    ? (ready ? 'Tudo pronto. Bora!' : 'Precisa de pelo menos 1 jogador em cada lado.')
-    : `Aguardando ${hostP ? hostP.name : 'o anfitrião'} começar a partida.`;
+    ? (ready ? t('r.ready') : t('r.need_players'))
+    : t('r.waiting_start', { host: hostP ? hostP.name : t('r.the_host') });
 }
 
 function qpos(queue, id) {
@@ -280,7 +289,7 @@ $('copy-link').addEventListener('click', async () => {
   const url = `${location.origin}/sala/${CODE}`;
   try {
     await navigator.clipboard.writeText(url);
-    toast('Link copiado! Mande para a galera.', 'success');
+    toast(t('r.copied'), 'success');
   } catch {
     const tmp = h('input', { value: url, 'aria-hidden': 'true', class: 'sr-only' });
     document.body.append(tmp);
@@ -288,7 +297,7 @@ $('copy-link').addEventListener('click', async () => {
     let ok = false;
     try { ok = document.execCommand('copy'); } catch { ok = false; }
     tmp.remove();
-    toast(ok ? 'Link copiado! Mande para a galera.' : `Copie o link: ${url}`, ok ? 'success' : 'info', 6000);
+    toast(ok ? t('r.copied') : t('r.copy_this', { url }), ok ? 'success' : 'info', 6000);
   }
 });
 
@@ -310,17 +319,19 @@ function renderThemeSelect() {
   if (document.activeElement === sel && sel.dataset.sig) return; // não atrapalha quem está escolhendo
   const st = S.room.settings;
   const pub = themes || [];
-  const pubIds = new Set(pub.map((t) => t.id));
-  const mine = getMyThemes().filter((t) => !pubIds.has(t.id));
-  const known = pubIds.has(st.theme_id) || mine.some((t) => t.id === st.theme_id);
-  const sig = JSON.stringify([pub.map((t) => [t.id, t.name, t.count]), mine.map((t) => t.id), st.theme_id, st.theme_name]);
+  const pubIds = new Set(pub.map((x) => x.id));
+  const mine = getMyThemes().filter((x) => !pubIds.has(x.id));
+  const known = pubIds.has(st.theme_id) || mine.some((x) => x.id === st.theme_id);
+  const sig = JSON.stringify([getLang(), pub.map((x) => [x.id, x.name, x.count]), mine.map((x) => x.id), st.theme_id, st.theme_name]);
   if (sel.dataset.sig !== sig) {
-    const opts = pub.map((t) => h('option', { value: t.id },
-      t.id === 'classic' ? `${t.name} (${t.count} personagens)` : `${t.name} · por ${t.author} (${t.count})`));
-    if (!pub.length && st.theme_id === 'classic') opts.push(h('option', { value: 'classic' }, 'Clássico (24 personagens)'));
+    const opts = pub.map((x) => h('option', { value: x.id },
+      x.id === 'classic'
+        ? t('r.theme_opt_classic', { name: themeDisplayName(x.id, x.name), n: x.count })
+        : t('r.theme_opt', { name: x.name, author: x.author, n: x.count })));
+    if (!pub.length && st.theme_id === 'classic') opts.push(h('option', { value: 'classic' }, t('r.theme_opt_classic', { name: t('theme.classic'), n: 24 })));
     const nodes = [...opts];
-    if (mine.length) nodes.push(h('optgroup', { label: 'Seus temas' }, mine.map((t) => h('option', { value: t.id }, t.name))));
-    if (!known && !(st.theme_id === 'classic' && !pub.length)) nodes.push(h('option', { value: st.theme_id }, st.theme_name || 'Tema escolhido'));
+    if (mine.length) nodes.push(h('optgroup', { label: t('r.my_themes') }, mine.map((x) => h('option', { value: x.id }, x.name))));
+    if (!known && !(st.theme_id === 'classic' && !pub.length)) nodes.push(h('option', { value: st.theme_id }, themeName() || t('r.chosen_theme')));
     sel.replaceChildren(...nodes);
     sel.dataset.sig = sig;
   }
@@ -345,32 +356,32 @@ function scoreText() {
 
 function bannerFor(mySide) {
   const m = S.match;
-  if (!m) return { text: 'Preparando a partida…', mine: false };
+  if (!m) return { text: t('r.preparing'), mine: false };
   if (m.phase === 'over' || S.room.status !== 'playing') {
-    return { text: m.winner_side ? `Fim da partida: ${winnerPhrase(m.winner_side)}` : 'Partida encerrada', mine: false };
+    return { text: m.winner_side ? t('r.game_over_w', { phrase: winnerPhrase(m.winner_side) }) : t('r.match_ended'), mine: false };
   }
   const asker = nameOf(m.asker_id);
   const answerer = m.answerer_id ? nameOf(m.answerer_id) : '';
   if (m.phase === 'asking') {
-    if (!m.asker_id) return { text: `Vez ${m.turn_side === mySide ? 'do seu lado' : `de ${sideLabel(m.turn_side)}`}: ninguém conectado para perguntar.`, mine: false };
-    if (m.asker_id === me.player_id) return { text: 'Sua vez de perguntar (ou chutar)!', mine: true };
-    if (m.turn_side === mySide) return { text: `Vez do seu time: ${asker} está perguntando.`, mine: false };
-    return { text: isDuel() ? `Vez de ${asker} perguntar.` : `Vez do ${sideLabel(m.turn_side)}: ${asker} está perguntando.`, mine: false };
+    if (!m.asker_id) return { text: m.turn_side === mySide ? t('r.turn_nobody_mine') : t('r.turn_nobody', { side: sideLabel(m.turn_side) }), mine: false };
+    if (m.asker_id === me.player_id) return { text: t('r.your_turn'), mine: true };
+    if (m.turn_side === mySide) return { text: t('r.team_asking', { name: asker }), mine: false };
+    return { text: isDuel() ? t('r.duel_asking', { name: asker }) : t('r.other_asking', { side: sideLabel(m.turn_side), name: asker }), mine: false };
   }
   // answering
   const q = m.pending_question?.text || '';
-  if (m.answerer_id === me.player_id) return { text: `Responda: ${q}`, mine: true };
-  if (m.turn_side === mySide) return { text: `Aguardando ${answerer || 'o outro lado'} responder.`, mine: false };
-  return { text: `${answerer || 'Seu time'} está respondendo: ${q}`, mine: false };
+  if (m.answerer_id === me.player_id) return { text: t('r.answer_q', { q }), mine: true };
+  if (m.turn_side === mySide) return { text: t('r.waiting_answer', { name: answerer || t('r.other_side') }), mine: false };
+  return { text: t('r.answering', { name: answerer || t('r.your_team'), q }), mine: false };
 }
 
 function winnerPhrase(side) {
   const mySide = S.you.side;
   if (mySide && S.you.role === 'player') {
-    if (side === mySide) return isDuel() ? 'você venceu!' : 'seu time venceu!';
-    return isDuel() ? `${sideLabel(side)} venceu.` : `o ${sideLabel(side)} venceu.`;
+    if (side === mySide) return isDuel() ? t('r.w_you') : t('r.w_your_team');
+    return isDuel() ? t('r.w_duel', { side: sideLabel(side) }) : t('r.w_team', { side: sideLabel(side) });
   }
-  return `${sideLabel(side)} venceu.`;
+  return t('r.w_duel', { side: sideLabel(side) });
 }
 
 function setFigure(fig, ch, caption) {
@@ -393,21 +404,21 @@ function renderGame() {
   const { room, you } = S;
   const m = S.match;
   const mySide = you.side;
-  $('g-room-name').textContent = room.name || `Sala ${room.code}`;
-  $('g-room-sub').textContent = `Sala ${room.code} · ${isDuel() ? 'Duelo 1x1' : 'Time x Time'} · Tema ${room.settings.theme_name}`;
+  $('g-room-name').textContent = roomName();
+  $('g-room-sub').textContent = t('r.room_sub', { code: room.code, mode: t(isDuel() ? 'room.duel' : 'room.team'), theme: themeName() });
   const bn = bannerFor(mySide);
   const banner = $('g-banner');
   banner.textContent = bn.text;
   banner.classList.toggle('is-mine', bn.mine);
   banner.classList.toggle('is-other', !bn.mine && m && m.turn_side !== mySide);
-  $('g-match-n').textContent = m ? (isDuel() ? `Partida ${m.number}` : `Partida ${m.number} de ${room.settings.best_of}`) : '';
+  $('g-match-n').textContent = m ? (isDuel() ? t('r.match_n', { n: m.number }) : t('r.match_n_of', { n: m.number, of: room.settings.best_of })) : '';
 
   $('g-score-name-A').textContent = sideLabel('A', true);
   $('g-score-name-B').textContent = sideLabel('B', true);
   $('g-score').textContent = scoreText();
   $('g-score').setAttribute('aria-label', `${sideLabel('A')} ${S.score?.A ?? 0}, ${sideLabel('B')} ${S.score?.B ?? 0}`);
 
-  $('g-secret-title').textContent = isDuel() ? 'Seu segredo' : 'Segredo do seu time';
+  $('g-secret-title').textContent = isDuel() ? t('r.your_secret') : t('r.team_secret');
   const secretCard = $('g-secret');
   secretCard.classList.toggle('secret-card-coral', mySide === 'B');
   setFigure(secretCard, m && charById(m.secrets?.[mySide]));
@@ -416,29 +427,29 @@ function renderGame() {
   const sides = [mySide, other(mySide)];
   $('g-teams').replaceChildren(...sides.map((side) => {
     const mem = players().filter((p) => p.side === side);
-    const title = side === mySide ? (isDuel() ? 'Você' : `Seu time · ${sideLabel(side, true)}`) : (isDuel() ? 'Adversário' : sideLabel(side));
+    const title = side === mySide ? (isDuel() ? t('r.you') : t('r.your_team_side', { side: sideLabel(side, true) })) : (isDuel() ? t('r.opponent') : sideLabel(side));
     const downN = m?.down_counts?.[side] ?? m?.boards?.[side]?.down?.length;
-    const left = m && downN != null ? `restam ${m.characters.length - downN}` : '';
+    const left = m && downN != null ? t('r.left_n', { n: m.characters.length - downN }) : '';
     return h('div', { class: `team-block team-${side}` },
       h('div', { class: 'team-block-head' }, h('span', { class: `team-name side-color-${side}` }, title), h('span', { class: 'team-left' }, left)),
       h('ul', { class: 'member-list member-list-tight' }, mem.map((p) => {
         let tag = '';
         if (m && m.phase !== 'over') {
-          if (p.id === m.asker_id) tag = 'PERGUNTA';
-          else if (p.id === m.answerer_id) tag = 'RESPONDE';
+          if (p.id === m.asker_id) tag = t('r.tag_asks');
+          else if (p.id === m.answerer_id) tag = t('r.tag_answers');
         }
         return memberItem(p, { compact: true, tag });
       })));
   }));
   const nWatch = players().filter((p) => !p.side && p.connected).length;
-  $('g-watchers').textContent = nWatch ? (nWatch === 1 ? '1 observador assistindo' : `${nWatch} observadores assistindo`) : '';
+  $('g-watchers').textContent = nWatch ? (nWatch === 1 ? t('r.one_watcher') : t('r.n_watchers', { n: nWatch })) : '';
 
   // Painel de resposta
   const answering = m && room.status === 'playing' && m.phase === 'answering' && m.answerer_id === me.player_id;
   const ap = $('g-answer');
   ap.hidden = !answering;
   if (answering) {
-    $('g-answer-who').textContent = `${nameOf(m.pending_question?.asker_id || m.asker_id)} perguntou:`;
+    $('g-answer-who').textContent = t('r.asked', { name: nameOf(m.pending_question?.asker_id || m.asker_id) });
     $('g-answer-q').textContent = m.pending_question?.text || '';
     $('g-answer-secret').textContent = charById(m.secrets?.[mySide])?.name || '';
   }
@@ -455,11 +466,11 @@ function renderGame() {
   const input = $('ask-input');
   input.disabled = !ask || guessMode;
   $('ask-send').disabled = !ask || guessMode;
-  input.placeholder = ask ? 'Seu personagem usa chapéu?' : 'Aguarde a sua vez de perguntar';
-  $('ask-label').textContent = ask ? 'Sua pergunta' : 'Sua pergunta (não é sua vez)';
+  input.placeholder = ask ? t('r.ask_ph') : t('r.wait_turn_ph');
+  $('ask-label').textContent = ask ? t('r.your_q') : t('r.your_q_wait');
   const gb = $('guess-btn');
   gb.disabled = !ask;
-  gb.textContent = guessMode ? 'Cancelar chute' : 'Chutar personagem';
+  gb.textContent = guessMode ? t('r.cancel_guess') : t('r.guess_char');
 
   renderLog($('g-log'), mySide);
 }
@@ -487,14 +498,14 @@ function renderBoard(m, mySide) {
     const isDown = down.has(c.id);
     btn.classList.toggle('is-down', isDown);
     btn.setAttribute('aria-pressed', String(isDown));
-    btn.setAttribute('aria-label', guessMode ? `Chutar ${c.name}` : `${c.name}${isDown ? ', virado' : ''}`);
+    btn.setAttribute('aria-label', guessMode ? t('r.guess_name', { name: c.name }) : `${c.name}${isDown ? t('r.flipped') : ''}`);
     btn.disabled = !playing;
     btn.classList.toggle('is-target', m.phase === 'over' && m.secrets?.[other(mySide)] === c.id);
   }
   const left = m.characters.length - down.size;
   $('g-remaining').textContent = guessMode
-    ? 'Escolha o personagem do chute'
-    : `Clique para virar quem você já descartou · restam ${left}`;
+    ? t('r.pick_guess')
+    : t('r.flip_hint', { n: left });
   $('g-unflip').disabled = !playing || down.size === 0;
 }
 
@@ -517,7 +528,7 @@ $('ask-form').addEventListener('submit', (e) => {
   const input = $('ask-input');
   const text = input.value.replace(/\s+/g, ' ').trim();
   if (!text) { input.focus(); return; }
-  if (text.length > 140) { toast('A pergunta pode ter no máximo 140 caracteres.', 'error'); return; }
+  if (text.length > 140) { toast(t('r.q_too_long'), 'error'); return; }
   if (send({ type: 'ask', text })) input.value = '';
 });
 
@@ -529,7 +540,7 @@ $('guess-btn').addEventListener('click', () => {
   guessMode = !guessMode;
   renderGame();
   if (guessMode) {
-    toast('Clique no personagem que você quer chutar.', 'info', 2500);
+    toast(t('r.click_guess'), 'info', 2500);
     cardEls.values().next().value?.focus();
   }
 });
@@ -544,7 +555,7 @@ function openGuessDialog(id) {
   if (!ch) return;
   guessPick = id;
   setFigure($('guess-pick'), ch);
-  $('guess-title').textContent = `Chutar ${ch.name}?`;
+  $('guess-title').textContent = t('r.guess_title', { name: ch.name });
   $('guess-dialog').showModal();
   $('guess-confirm').focus();
 }
@@ -566,14 +577,15 @@ function badge(text, kind) {
 
 function logWho(e, mySide) {
   const name = nameOf(e.player_id);
-  const verb = e.kind === 'guess' ? 'chutou' : e.kind === 'timeout' ? 'deixou o tempo acabar' : 'perguntou';
-  if (e.player_id === me.player_id) return `Você ${verb}`;
-  if (isDuel()) return `${name} ${verb}`;
+  const verb = t(e.kind === 'guess' ? 'log.v_guess' : e.kind === 'timeout' ? 'log.v_timeout' : 'log.v_question');
+  if (e.player_id === me.player_id) return t('log.you', { verb });
+  if (isDuel()) return t('log.name', { name, verb });
+  const side = sideLabel(e.side, true);
   if (mySide) {
-    if (e.side === mySide) return `${name} (seu time) ${verb}`;
-    return `${name} (${sideLabel(e.side, true)}) ${verb}${e.kind === 'question' ? ' ao seu time' : ''}`;
+    if (e.side === mySide) return t('log.name_team', { name, verb });
+    return t(e.kind === 'question' ? 'log.name_side_q' : 'log.name_side', { name, side, verb });
   }
-  return `${name} (${sideLabel(e.side, true)}) ${verb}`;
+  return t('log.name_side', { name, side, verb });
 }
 
 function renderLog(list, mySide) {
@@ -581,7 +593,7 @@ function renderLog(list, mySide) {
   const items = [];
   if (m && m.phase === 'answering' && m.pending_question) {
     items.push(h('li', { class: `log-item log-pending side-${m.turn_side}` },
-      h('span', { class: 'log-who' }, `${logWho({ kind: 'question', player_id: m.pending_question.asker_id || m.asker_id, side: m.turn_side }, mySide)} · aguardando`),
+      h('span', { class: 'log-who' }, t('log.waiting', { who: logWho({ kind: 'question', player_id: m.pending_question.asker_id || m.asker_id, side: m.turn_side }, mySide) })),
       h('div', { class: 'log-row' }, h('span', { class: 'log-text' }, m.pending_question.text), badge('…', 'wait'))));
   }
   const log = (m?.log || []).slice().reverse();
@@ -589,20 +601,20 @@ function renderLog(list, mySide) {
     let text = e.text || '';
     let b = null;
     if (e.kind === 'question') {
-      b = e.answer === 'yes' ? badge('SIM', 'yes') : e.answer === 'no' ? badge('NÃO', 'no') : badge('TEMPO', 'time');
+      b = e.answer === 'yes' ? badge(t('log.yes'), 'yes') : e.answer === 'no' ? badge(t('log.no'), 'no') : badge(t('log.time'), 'time');
     } else if (e.kind === 'guess') {
       const ch = charByText(e.text);
-      text = ch ? `É ${ch.name}?` : (text || 'Chute');
-      b = e.correct ? badge('ACERTOU', 'hit') : badge('ERROU', 'no');
+      text = ch ? t('log.is_it', { name: ch.name }) : (text || t('log.guess'));
+      b = e.correct ? badge(t('log.hit'), 'hit') : badge(t('log.miss'), 'no');
     } else if (e.kind === 'timeout') {
-      text = text || 'Não perguntou a tempo.';
-      b = badge('TEMPO', 'time');
+      text = text || t('log.no_ask');
+      b = badge(t('log.time'), 'time');
     }
     items.push(h('li', { class: `log-item side-${e.side || 'x'}` },
       h('span', { class: 'log-who' }, logWho(e, mySide)),
       h('div', { class: 'log-row' }, h('span', { class: 'log-text' }, text), b)));
   }
-  if (!items.length) items.push(h('li', { class: 'log-empty' }, 'Nenhuma pergunta ainda. As perguntas e respostas aparecem aqui.'));
+  if (!items.length) items.push(h('li', { class: 'log-empty' }, t('log.empty')));
   list.replaceChildren(...items);
 }
 
@@ -612,8 +624,8 @@ const specBoards = { A: { key: '', els: new Map() }, B: { key: '', els: new Map(
 function renderSpec() {
   const { room } = S;
   const m = S.match;
-  $('s-room-name').textContent = room.name || `Sala ${room.code}`;
-  $('s-room-sub').textContent = `Sala ${room.code} · Você está observando`;
+  $('s-room-name').textContent = roomName();
+  $('s-room-sub').textContent = t('r.observing', { code: room.code });
   $('s-score-name-A').textContent = sideLabel('A');
   $('s-score-name-B').textContent = sideLabel('B');
   $('s-score').textContent = scoreText();
@@ -621,32 +633,32 @@ function renderSpec() {
   const qp = $('s-queue');
   const pos = (S.queue || []).indexOf(me.player_id);
   qp.hidden = !(isDuel() && pos >= 0);
-  qp.textContent = pos === 0 ? 'Você é o próximo da fila' : `Você é o ${pos + 1}º da fila`;
+  qp.textContent = pos === 0 ? t('r.queue_next') : t('r.queue_nth', { n: pos + 1 });
 
-  let banner = 'Aguardando a partida…';
+  let banner = t('r.waiting_match');
   if (m) {
-    if (m.phase === 'over' || room.status !== 'playing') banner = m.winner_side ? `Fim da partida ${m.number}: ${sideLabel(m.winner_side)} venceu.` : 'Partida encerrada.';
-    else if (m.phase === 'asking' && !m.asker_id) banner = `Vez de ${sideLabel(m.turn_side)}: ninguém conectado para perguntar.`;
-    else if (m.phase === 'asking') banner = `Vez ${isDuel() ? 'de' : 'do'} ${sideLabel(m.turn_side)}: ${nameOf(m.asker_id)} pergunta.`;
-    else banner = `${nameOf(m.asker_id)} perguntou "${m.pending_question?.text || ''}" · ${m.answerer_id ? nameOf(m.answerer_id) : 'o outro lado'} responde.`;
+    if (m.phase === 'over' || room.status !== 'playing') banner = m.winner_side ? t('r.s_over_w', { n: m.number, side: sideLabel(m.winner_side) }) : t('r.s_ended');
+    else if (m.phase === 'asking' && !m.asker_id) banner = t('r.turn_nobody', { side: sideLabel(m.turn_side) });
+    else if (m.phase === 'asking') banner = t(isDuel() ? 'r.s_turn_duel' : 'r.s_turn_team', { side: sideLabel(m.turn_side), name: nameOf(m.asker_id) });
+    else banner = t('r.s_answering', { asker: nameOf(m.asker_id), q: m.pending_question?.text || '', answerer: m.answerer_id ? nameOf(m.answerer_id) : t('r.other_side') });
   }
   $('s-banner').textContent = banner;
 
   for (const side of ['A', 'B']) {
     const mem = players().filter((p) => p.side === side);
     $(`s-name-${side}`).textContent = sideLabel(side);
-    $(`s-members-${side}`).textContent = mem.map((p) => p.name + (p.connected ? '' : ' (offline)')).join(', ') || 'Ninguém';
+    $(`s-members-${side}`).textContent = mem.map((p) => p.name + (p.connected ? '' : t('r.offline_paren'))).join(', ') || t('r.nobody');
     let status = '';
     if (m && m.phase !== 'over') {
-      if (m.turn_side === side) status = m.phase === 'asking' ? 'Perguntando agora' : 'Esperando a resposta';
-      else status = m.phase === 'answering' ? 'Respondendo' : 'Aguardando';
-    } else if (m?.winner_side) status = m.winner_side === side ? 'Venceu a partida' : 'Perdeu a partida';
+      if (m.turn_side === side) status = m.phase === 'asking' ? t('r.s_asking_now') : t('r.s_wait_answer');
+      else status = m.phase === 'answering' ? t('r.s_answering_now') : t('r.s_waiting');
+    } else if (m?.winner_side) status = m.winner_side === side ? t('r.s_won') : t('r.s_lost');
     const down = m?.boards?.[side]?.down || [];
-    if (m) status += `${status ? ' · ' : ''}restam ${m.characters.length - down.length}`;
+    if (m) status += `${status ? ' · ' : ''}${t('r.left_n', { n: m.characters.length - down.length })}`;
     $(`s-status-${side}`).textContent = status;
     const sec = m && charById(m.secrets?.[side]);
     setFigure($(`s-secret-${side}`), sec);
-    $(`s-secret-${side}`).setAttribute('aria-label', sec ? `Segredo: ${sec.name}` : 'Segredo');
+    $(`s-secret-${side}`).setAttribute('aria-label', sec ? t('r.secret_of', { name: sec.name }) : t('r.secret'));
     renderMiniBoard(side, m);
     document.querySelector(`.spec-board[data-side="${side}"]`).classList.toggle('is-turn', !!m && m.phase !== 'over' && m.turn_side === side);
   }
@@ -674,7 +686,7 @@ function renderMiniBoard(side, m) {
     const d = sb.els.get(c.id);
     d.classList.toggle('is-down', down.has(c.id));
     d.classList.toggle('is-target', c.id === target);
-    d.setAttribute('aria-label', `${c.name}${down.has(c.id) ? ', virado' : ''}${c.id === target ? ', é o alvo' : ''}`);
+    d.setAttribute('aria-label', `${c.name}${down.has(c.id) ? t('r.flipped') : ''}${c.id === target ? t('r.is_target') : ''}`);
   }
 }
 
@@ -714,7 +726,7 @@ function tick() {
     num.textContent = '–';
     fg.style.strokeDashoffset = String(CIRC);
     el.dataset.level = 'idle';
-    el.setAttribute('aria-label', 'Sem cronômetro');
+    el.setAttribute('aria-label', t('r.no_timer'));
     return;
   }
   const ms = Math.max(0, timerEnd - performance.now());
@@ -722,7 +734,7 @@ function tick() {
   num.textContent = String(secs);
   fg.style.strokeDashoffset = String(CIRC * (1 - ms / timerTotal));
   el.dataset.level = secs <= 5 ? 'danger' : secs <= 10 ? 'warn' : 'ok';
-  el.setAttribute('aria-label', `Tempo restante ${secs} segundos`);
+  el.setAttribute('aria-label', t('r.time_left', { n: secs }));
 }
 setInterval(tick, 250);
 
@@ -743,15 +755,15 @@ function renderResult() {
   const mySide = S.you.role === 'player' ? S.you.side : null;
   const win = st === 'series_over' ? (S.series_winner || m.winner_side) : m.winner_side;
 
-  $('result-kicker').textContent = st === 'series_over' ? 'Fim da série' : `Fim da partida ${m.number}`;
-  let title = 'Partida encerrada';
+  $('result-kicker').textContent = st === 'series_over' ? t('r.series_over') : t('r.match_over_n', { n: m.number });
+  let title = t('r.match_ended');
   if (win) {
     if (mySide) {
       const mine = win === mySide;
-      if (st === 'series_over') title = mine ? (isDuel() ? 'Você é campeão!' : 'Vocês são campeões!') : `${sideLabel(win)} é campeão!`;
-      else title = mine ? (isDuel() ? 'Você venceu!' : 'Seu time venceu!') : (isDuel() ? 'Você perdeu!' : 'Seu time perdeu!');
+      if (st === 'series_over') title = mine ? t(isDuel() ? 'r.t_champ_you' : 'r.t_champ_team') : t('r.t_champ', { side: sideLabel(win) });
+      else title = mine ? t(isDuel() ? 'r.t_won_you' : 'r.t_won_team') : t(isDuel() ? 'r.t_lost_you' : 'r.t_lost_team');
     } else {
-      title = st === 'series_over' ? `${sideLabel(win)} é campeão!` : `${sideLabel(win)} venceu!`;
+      title = st === 'series_over' ? t('r.t_champ', { side: sideLabel(win) }) : t('r.t_won', { side: sideLabel(win) });
     }
   }
   $('result-title').textContent = title;
@@ -761,12 +773,12 @@ function renderResult() {
   let reason = '';
   if (last && last.kind === 'guess') {
     const ch = charByText(last.text);
-    const who = last.player_id === me.player_id ? 'Você' : nameOf(last.player_id);
+    const who = last.player_id === me.player_id ? t('r.you') : nameOf(last.player_id);
     reason = last.correct
-      ? `${who} acertou: era ${ch ? ch.name : 'o personagem certo'}!`
-      : (ch || last.text ? `${who} chutou ${ch ? ch.name : last.text} e errou.` : `${who} chutou errado.`);
+      ? t('r.reason_hit', { who, name: ch ? ch.name : t('r.right_char') })
+      : (ch || last.text ? t('r.reason_miss', { who, name: ch ? ch.name : last.text }) : t('r.reason_wrong', { who }));
   } else if (win) {
-    reason = 'Vitória por W.O.: o outro lado ficou sem jogadores conectados.';
+    reason = t('r.reason_wo');
   }
   $('result-reason').textContent = reason;
 
@@ -779,7 +791,7 @@ function renderResult() {
   for (const side of ['A', 'B']) {
     const fig = $(`reveal-${side}`);
     fig.className = `reveal-card reveal-${side}${win === side ? ' is-winner' : ''}`;
-    fig.querySelector('.reveal-label').textContent = isDuel() ? `Segredo de ${sideLabel(side)}` : `Segredo do ${sideLabel(side)}`;
+    fig.querySelector('.reveal-label').textContent = t(isDuel() ? 'r.secret_duel' : 'r.secret_team', { side: sideLabel(side) });
     setFigure(fig, charById(m.secrets?.[side]));
   }
 
@@ -788,7 +800,7 @@ function renderResult() {
   $('back-lobby').hidden = !host;
   const hostP = playerById(S.room.host_id);
   $('wait-host').hidden = host;
-  $('wait-host').textContent = `Aguardando ${hostP ? hostP.name : 'o anfitrião'} ${st === 'match_over' ? 'começar a próxima partida' : 'voltar ao lobby'}…`;
+  $('wait-host').textContent = t(st === 'match_over' ? 'r.wait_next' : 'r.wait_lobby', { host: hostP ? hostP.name : t('r.the_host') });
 
   if (dismissedKey === key) {
     if (dlg.open) dlg.close();
@@ -815,9 +827,9 @@ let unread = 0;
 
 function chatContext(view) {
   const playing = S?.room.status === 'playing';
-  if (view === 'lobby' || !playing) return { title: 'Chat da sala', label: 'Mensagem para a sala', ph: 'Diga oi para a sala', tab: 'Chat da sala' };
-  if (view === 'game') return { title: 'Chat do time', label: 'Mensagem (só seu time vê)', ph: 'Combine a próxima pergunta…', tab: 'Chat do time' };
-  return { title: 'Chat dos observadores', label: 'Mensagem (só observadores veem)', ph: 'Comente a partida…', tab: 'Chat' };
+  if (view === 'lobby' || !playing) return { title: t('chat.room_title'), label: t('chat.room_label'), ph: t('chat.room_ph'), tab: t('chat.room_title') };
+  if (view === 'game') return { title: t('chat.team_title'), label: t('chat.team_label'), ph: t('chat.team_ph'), tab: t('chat.team_title') };
+  return { title: t('chat.spec_title'), label: t('chat.spec_label'), ph: t('chat.spec_ph'), tab: t('chat.tab') };
 }
 
 function placeChat(view) {
@@ -851,21 +863,21 @@ function updateUnread() {
     const el = $(id);
     el.hidden = unread === 0;
     el.textContent = unread > 9 ? '9+' : String(unread);
-    el.setAttribute('aria-label', `${unread} mensagens novas`);
+    el.setAttribute('aria-label', t('chat.unread', { n: unread }));
   }
 }
 
-const CHANNEL_TAG = { team: 'time', spectators: 'observadores' };
+const CHANNEL_TAG = { team: 'chat.ch_team', spectators: 'chat.ch_spec' };
 function addChat(msg) {
   const nearBottom = chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 60;
   const mine = msg.player_id === me.player_id;
-  const time = msg.ts ? new Date(msg.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const time = msg.ts ? new Date(msg.ts).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) : '';
   const li = h('li', { class: `chat-msg${mine ? ' is-mine' : ''}` },
     h('span', { class: 'chat-dot', style: { background: safeColor(msg.color) }, 'aria-hidden': 'true' }),
     h('div', { class: 'chat-body' },
       h('span', { class: 'chat-meta' },
-        h('strong', {}, msg.name || 'Alguém'),
-        CHANNEL_TAG[msg.channel] ? h('span', { class: 'chat-chan' }, CHANNEL_TAG[msg.channel]) : null,
+        h('strong', {}, msg.name || t('r.someone')),
+        CHANNEL_TAG[msg.channel] ? h('span', { class: 'chat-chan', dataset: { i18n: CHANNEL_TAG[msg.channel] } }, t(CHANNEL_TAG[msg.channel])) : null,
         time ? h('time', { class: 'chat-time' }, time) : null),
       h('span', { class: 'chat-text' }, msg.text || '')));
   chatList.append(li);
@@ -925,26 +937,41 @@ function askName() {
     const name = cleanName(input.value);
     if (!name) {
       e.preventDefault();
-      $('name-error').textContent = 'Digite um apelido de 1 a 20 caracteres.';
+      $('name-error').textContent = t('r.name_error');
+      $('name-error').dataset.i18n = 'r.name_error';
       input.setAttribute('aria-invalid', 'true');
       input.focus();
       return;
     }
     me = saveIdentity({ name });
     $('name-error').textContent = '';
+    delete $('name-error').dataset.i18n;
     setTimeout(start, 0);
   });
-  $('loading-text').textContent = 'Escolha um apelido para entrar.';
+  setLoading('r.pick_name');
   dlg.showModal();
   input.focus();
 }
 
 function start() {
   me = getIdentity();
-  $('loading-text').textContent = `Entrando na sala ${CODE}…`;
+  setLoading('room.entering', { code: CODE });
   connect();
   loadThemes(true);
 }
+
+// ======================== Idioma ========================
+// Troca sem recarregar: re-renderiza a partir do último snapshot e avisa o servidor (erros no novo idioma).
+onLangChange((lang) => {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'set_lang', lang }));
+  if (connMsg) setConn(connMsg, connAction);
+  if (!S) setLoading(loadingMsg[0], loadingMsg[1]);
+  if (S) {
+    const sel = $('set-theme');
+    delete sel.dataset.sig;
+    render();
+  }
+});
 
 if (!CODE) location.href = '/';
 else if (!me.name) askName();

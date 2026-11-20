@@ -1,4 +1,7 @@
 // Utilidades compartilhadas: identidade do jogador, fetch JSON, toasts e criação segura de elementos.
+import { t, getLang, onLangChange } from './i18n.js';
+
+export { t, getLang, onLangChange };
 
 export const COLORS = ['#FFC93C', '#2EC4B6', '#FF9F5A', '#B8A6FF', '#FF7C9C', '#7EE8DD', '#8A6CFF', '#3A86FF'];
 export const NAME_MAX = 20;
@@ -67,11 +70,11 @@ export function saveIdentity(patch) {
 /** Temas criados neste navegador (para achar temas privados no lobby). */
 export function getMyThemes() {
   const list = readJSON(THEMES_KEY, []);
-  return Array.isArray(list) ? list.filter((t) => t && typeof t.id === 'string') : [];
+  return Array.isArray(list) ? list.filter((x) => x && typeof x.id === 'string') : [];
 }
 
 export function rememberTheme(theme) {
-  const list = getMyThemes().filter((t) => t.id !== theme.id);
+  const list = getMyThemes().filter((x) => x.id !== theme.id);
   list.unshift({ id: theme.id, name: String(theme.name || '').slice(0, 40), count: theme.count | 0 });
   writeJSON(THEMES_KEY, list.slice(0, 30));
 }
@@ -179,7 +182,7 @@ export async function api(path, opts = {}) {
   try {
     res = await fetch(path, init);
   } catch {
-    throw new Error('Sem conexão com o servidor. Tente de novo.');
+    throw new Error(t('net.offline'));
   }
   let data = null;
   const text = await res.text();
@@ -187,7 +190,7 @@ export async function api(path, opts = {}) {
     try { data = JSON.parse(text); } catch { data = null; }
   }
   if (!res.ok) {
-    const err = new Error(detailMessage(data) || `Erro ${res.status} no servidor.`);
+    const err = new Error(detailMessage(data) || t('net.status', { status: res.status }));
     err.status = res.status;
     throw err;
   }
@@ -208,12 +211,12 @@ export function toast(message, kind = 'info', ms = 3800) {
     box = h('div', { id: 'toasts', class: 'toasts', role: 'status', 'aria-live': 'polite' });
     document.body.append(box);
   }
-  const t = h('div', { class: `toast toast-${kind}` }, String(message));
-  box.append(t);
-  requestAnimationFrame(() => t.classList.add('show'));
+  const el = h('div', { class: `toast toast-${kind}` }, String(message));
+  box.append(el);
+  requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => {
-    t.classList.remove('show');
-    setTimeout(() => t.remove(), 300);
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
   }, ms);
 }
 
@@ -234,7 +237,7 @@ export function colorPicker(container, current, onChange) {
   const buttons = COLORS.map((c, i) => {
     const b = h('button', {
       type: 'button', class: 'swatch', role: 'radio', style: { background: c },
-      'aria-label': `Cor ${i + 1}`, 'aria-checked': String(c === current), tabindex: c === current ? '0' : '-1',
+      'aria-label': t('color.n', { n: i + 1 }), 'aria-checked': String(c === current), tabindex: c === current ? '0' : '-1',
     });
     b.addEventListener('click', () => select(c, true));
     b.addEventListener('keydown', (e) => {
@@ -248,6 +251,7 @@ export function colorPicker(container, current, onChange) {
     container.append(b);
     return b;
   });
+  onLangChange(() => buttons.forEach((b, i) => b.setAttribute('aria-label', t('color.n', { n: i + 1 }))));
   function select(c, notify) {
     current = c;
     buttons.forEach((b, i) => {
@@ -258,4 +262,14 @@ export function colorPicker(container, current, onChange) {
     if (notify) onChange(c);
   }
   return { set: (c) => select(c, false) };
+}
+
+/** Nome de sala para exibir: o nome padrão do servidor ("Sala K7Q2") é traduzido. */
+export function roomDisplayName(name, code) {
+  return !name || name === `Sala ${code}` ? t('room.default_name', { code }) : name;
+}
+
+/** Nome de tema para exibir: o tema embutido "Clássico" vira "Classic" em inglês. */
+export function themeDisplayName(id, name) {
+  return id === 'classic' || (!id && name === 'Clássico') ? t('theme.classic') : (name || '');
 }
