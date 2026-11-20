@@ -612,3 +612,11 @@ button { font: inherit; }
   .page-home .site-header .site-nav { order: 3; width: 100%; margin-left: 0; gap: 18px; flex-wrap: wrap; }
   .page-home .site-header .lang-switch { margin-left: auto; }
 }
+
+/* Janela "Como jogar" */
+.dialog-rules { width: min(94vw, 640px); }
+.rules-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.rules-list li { display: flex; gap: 14px; align-items: flex-start; }
+.rules-list strong { display: block; font-size: 17px; }
+.rules-list span:not(.step-n) { display: block; color: var(--ink-2); font-weight: 600; font-size: 15px; }
+#how-title:focus { outline: none; }

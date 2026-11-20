@@ -158,3 +158,11 @@ if (params.get('erro') === 'sala_nao_encontrada' || params.get('erro') === 'sala
   history.replaceState(null, '', '/');
 }
 if (!me.name) nick.focus();
+
+// "Como jogar": abre as regras completas numa janela (o link #como-jogar fica de reserva sem JS).
+const howDialog = $('how-dialog');
+$('how-open')?.addEventListener('click', (e) => {
+  if (!howDialog?.showModal) return;
+  e.preventDefault();
+  howDialog.showModal();
+});
