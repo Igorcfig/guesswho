@@ -191,3 +191,4 @@ Decisões tomadas onde o SPEC era omisso (o contrato acima não muda):
 ## Notas de integração (PM)
 - `state` traz `server_now` (epoch ms do servidor no envio); o timer usa `deadline - server_now`.
 - `match.down_counts` = `{"A": n, "B": n}`: quantas cartas cada lado virou (visível a todos, sem revelar quais).
+- Banco: o app monta a URL a partir de `POSTGRES_USER/PASSWORD/HOST/PORT/DB` (escape via `sqlalchemy.engine.URL.create`); `DATABASE_URL` explícita tem prioridade; sem nenhuma, usa SQLite.
