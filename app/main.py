@@ -30,7 +30,20 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Cara a Cara", lifespan=lifespan)
-app.mount("/static", StaticFiles(directory=config.STATIC_DIR, check_dir=False), name="static")
+class RevalidatedStaticFiles(StaticFiles):
+    """Arquivos estáticos que o navegador sempre revalida (ETag) antes de usar.
+
+    Sem Cache-Control, navegadores aplicam cache heurístico e podem misturar módulos JS antigos
+    com HTML novo depois de uma atualização, quebrando os imports (página sem reação a cliques).
+    """
+
+    async def get_response(self, path, scope):  # type: ignore[override]
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/static", RevalidatedStaticFiles(directory=config.STATIC_DIR, check_dir=False), name="static")
 app.mount("/uploads", StaticFiles(directory=config.UPLOAD_DIR, check_dir=False), name="uploads")
 templates = Jinja2Templates(directory=str(config.TEMPLATES_DIR))
 templates.env.globals["repo_url"] = config.REPO_URL

@@ -182,3 +182,10 @@ def test_unknown_api_route_pt_br(client):
     r = client.get("/api/nada")
     assert r.status_code == 404 and r.json() == {"detail": "Não encontrado."}
     assert app is not None
+
+
+def test_static_js_sempre_revalidado(client):
+    r = client.get("/static/js/i18n.js")
+    assert r.status_code == 200
+    assert r.headers["cache-control"] == "no-cache"
+    assert "etag" in r.headers
