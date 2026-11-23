@@ -1,4 +1,4 @@
-"""Configuração dos testes: SQLite e uploads em diretório temporário."""
+"""Test setup: SQLite and uploads in a temporary directory."""
 from __future__ import annotations
 
 import io
@@ -19,7 +19,7 @@ from app.realtime.manager import manager  # noqa: E402
 
 
 def make_png(seed: int = 0, size: int = 4) -> bytes:
-    """PNG válido minúsculo gerado em memória (sem Pillow)."""
+    """Tiny valid PNG generated in memory (no Pillow)."""
     def chunk(tag: bytes, data: bytes) -> bytes:
         return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
 

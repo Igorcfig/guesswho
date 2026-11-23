@@ -1,4 +1,4 @@
-"""Modelos persistentes: temas customizados e seus personagens."""
+"""Persistent models: custom themes and their characters."""
 from __future__ import annotations
 
 import uuid

@@ -1,4 +1,4 @@
-"""Testes das regras puras (relógio injetado via `now`)."""
+"""Tests for the pure rules (clock injected via `now`)."""
 from __future__ import annotations
 
 import random
@@ -108,7 +108,7 @@ def test_team_rotation_skips_disconnected():
         room.answer(m.answerer_id, "no", T0 + i)
     assert seen_askers == ["a1", "a2", "a3"]
     assert seen_answerers == ["b1", "b2", "b1"]
-    # A da vez de novo: perguntador seria a1; ele cai e o rodízio pula.
+    # A's turn again: the asker would be a1; they drop and the rotation skips them.
     assert m.turn_side == "A" and m.asker_id == "a1"
     room.disconnect("a1", T0 + 10)
     assert m.asker_id == "a2"
@@ -190,10 +190,10 @@ def test_team_series_best_of_3_and_alternating_start():
     room.next_match("a1", CHARS, T0)
     assert room.match.number == 2 and room.match.turn_side == "B"
     assert room.match.boards == {"A": [], "B": []}
-    room.guess("b1", wrong_char(room, "B"), T0)  # B erra → A vence
+    room.guess("b1", wrong_char(room, "B"), T0)  # B guesses wrong → A wins
     assert room.status == "series_over" and room.series_winner == "A"
     assert room.score == {"A": 2, "B": 0}
-    assert room.players["a1"].wins == 0  # wins só no duelo
+    assert room.players["a1"].wins == 0  # wins only count in duel mode
     with pytest.raises(GameError):
         room.next_match("a1", CHARS, T0)
     room.back_to_lobby("a1")
@@ -216,16 +216,16 @@ def test_duel_queue_and_rotation():
     with pytest.raises(GameError, match="ocupado"):
         room.join_side("s1", "A")
     room.start("a1", CHARS, T0)
-    room.guess("a1", wrong_char(room, "A"), T0)  # A perde
+    room.guess("a1", wrong_char(room, "A"), T0)  # A loses
     room.next_match("a1", CHARS, T0)
     assert room.players["s1"].side == "A"
     assert room.players["a1"].side is None
     assert room.queue == ["s2", "a1"]
     assert room.status == "playing"
-    # s1 (lado A) perde de novo; s2 entra.
+    # s1 (side A) loses again; s2 comes in.
     room.guess(room.match.asker_id, secret_guessed_by(room, room.match.turn_side), T0)
     winner = room.match.winner_side
-    assert winner == "B"  # partida 2 começa com B
+    assert winner == "B"  # match 2 starts with B
     room.next_match("a1", CHARS, T0)
     assert room.players["s2"].side == "A" and room.queue == ["a1", "s1"]
 
@@ -242,7 +242,7 @@ def test_duel_skips_disconnected_in_queue():
     room = make_room(players={"a1": "A", "b1": "B", "s1": None, "s2": None})
     room.disconnect("s1", T0)
     room.start("a1", CHARS, T0)
-    room.guess("a1", secret_guessed_by(room, "A"), T0)  # B perde
+    room.guess("a1", secret_guessed_by(room, "A"), T0)  # B loses
     room.next_match("a1", CHARS, T0)
     assert room.players["s2"].side == "B"
     assert room.players["s1"].side is None
@@ -297,7 +297,7 @@ def test_snapshot_visibility():
     assert set(sa["secrets"]) == {"A"} and set(sa["boards"]) == {"A"}
     assert set(sb["secrets"]) == {"B"} and sb["boards"] == {"B": {"down": ["carla"]}}
     assert set(ss["secrets"]) == {"A", "B"} and set(ss["boards"]) == {"A", "B"}
-    # Segredo do adversário não aparece em lugar nenhum do snapshot do jogador A.
+    # The opponent's secret does not appear anywhere in player A's snapshot.
     import json
 
     assert room.match.secrets["B"] not in json.dumps(
@@ -314,10 +314,10 @@ def test_walkover_after_60s():
     room = make_room()
     room.start("a1", CHARS, T0)
     room.disconnect("b1", T0 + 1000)
-    assert room.next_wakeup() == T0 + 30_000  # deadline vem antes
-    room.tick(T0 + 30_000)  # timeout de A, vez de B (sem conectados)
+    assert room.next_wakeup() == T0 + 30_000  # deadline comes first
+    room.tick(T0 + 30_000)  # A times out, B's turn (nobody connected)
     assert room.match.asker_id is None
-    assert room.next_wakeup() == T0 + 60_000  # deadline de B ainda vem antes do W.O.
+    assert room.next_wakeup() == T0 + 60_000  # B's deadline still comes before the walkover
     room.tick(T0 + 60_000)
     assert room.status == "playing"
     assert room.next_wakeup() == T0 + 1000 + WALKOVER_MS
@@ -328,7 +328,7 @@ def test_walkover_after_60s():
 def test_reconnect_cancels_walkover_and_fills_asker():
     room = make_room()
     room.start("a1", CHARS, T0)
-    room.tick(T0 + 30_000)  # vez de B
+    room.tick(T0 + 30_000)  # B's turn
     room.disconnect("b1", T0 + 30_001)
     assert room.match.asker_id is None
     room.connect("b1", "B1", "#FFC93C", T0 + 40_000)

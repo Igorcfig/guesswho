@@ -1,4 +1,4 @@
-"""Endpoint WebSocket /ws/{code}."""
+"""WebSocket endpoint /ws/{code}."""
 from __future__ import annotations
 
 import json

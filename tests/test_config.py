@@ -1,4 +1,4 @@
-"""Montagem da URL do banco a partir das variáveis POSTGRES_*."""
+"""Building the database URL from the POSTGRES_* variables."""
 import importlib
 
 from sqlalchemy.engine import make_url

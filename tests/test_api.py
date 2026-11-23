@@ -1,4 +1,4 @@
-"""Testes da API HTTP (salas, temas) e das rotas de página."""
+"""Tests for the HTTP API (rooms, themes) and the page routes."""
 from __future__ import annotations
 
 import pytest
@@ -18,7 +18,7 @@ def theme_form(n: int = 12, name: str = "Bichos", public: str = "true", names: l
     return data, files
 
 
-# ------------------------------------------------------------------ salas
+# ------------------------------------------------------------------ rooms
 def test_create_and_get_room(client):
     r = client.post("/api/rooms", json={"name": None, "public": True})
     assert r.status_code == 201
@@ -51,7 +51,7 @@ def test_list_public_rooms_only_with_players(client):
     }]
 
 
-# ------------------------------------------------------------------ temas
+# ----------------------------------------------------------------- themes
 def test_list_themes_classic_first(client):
     themes = client.get("/api/themes").json()
     assert themes[0]["id"] == "classic"
@@ -156,7 +156,7 @@ def test_theme_rejects_big_image(client):
     assert r.status_code == 422 and "2 MB" in r.json()["detail"]
 
 
-# ---------------------------------------------------------------- páginas
+# ------------------------------------------------------------------ pages
 @pytest.fixture()
 def fake_templates(monkeypatch):
     env = Environment(loader=DictLoader({

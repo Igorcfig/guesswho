@@ -1,4 +1,4 @@
-"""Teste de WebSocket: partida completa com 2 jogadores."""
+"""WebSocket test: a full match with 2 players."""
 from __future__ import annotations
 
 import pytest
@@ -44,7 +44,7 @@ def test_full_match_two_players(client):
             assert s["you"]["is_host"] is False
             state(wa, lambda m: len(m["players"]) == 2)
 
-            # Não-anfitrião não pode iniciar.
+            # A non-host cannot start.
             wb.send_json({"type": "start"})
             err = recv_until(wb, lambda m: m["type"] == "error")
             assert "anfitrião" in err["message"]
@@ -58,7 +58,7 @@ def test_full_match_two_players(client):
             wb.send_json({"type": "join_side", "side": "B"})
             state(wa, lambda m: {p["side"] for p in m["players"]} == {"A", "B"})
 
-            # Chat no lobby: canal room para todos.
+            # Lobby chat: room channel for everyone.
             wb.send_json({"type": "chat", "text": "boa sorte!"})
             chat = recv_until(wa, lambda m: m["type"] == "chat")
             assert chat["channel"] == "room" and chat["name"] == "Bruno" and chat["text"] == "boa sorte!"
@@ -72,9 +72,9 @@ def test_full_match_two_players(client):
             assert list(ma["boards"]) == ["A"]
             assert ma["turn_side"] == "A" and ma["asker_id"] == PID_A and ma["phase"] == "asking"
             assert isinstance(ma["deadline"], int)
-            secret_b = mb["secrets"]["B"]  # o que A precisa adivinhar
+            secret_b = mb["secrets"]["B"]  # what A has to guess
 
-            # Pergunta / resposta.
+            # Question / answer.
             wa.send_json({"type": "ask", "text": "Usa chapéu?"})
             sb = state(wb, lambda m: m["match"]["phase"] == "answering")
             assert sb["match"]["pending_question"] == {"text": "Usa chapéu?", "asker_id": PID_A}
@@ -83,17 +83,17 @@ def test_full_match_two_players(client):
             sa = state(wa, lambda m: m["match"]["turn_side"] == "B")
             assert sa["match"]["log"][-1]["answer"] == "no"
 
-            # Virar carta: só o próprio lado vê.
+            # Flipping a card: only the own side sees it.
             wa.send_json({"type": "flip", "character_id": "ana", "down": True})
             sa = state(wa, lambda m: m["match"]["boards"]["A"]["down"] == ["ana"])
             sb = state(wb)
             assert "A" not in sb["match"]["boards"]
 
-            # Chat durante a partida é do time.
+            # Chat during the match is team-only.
             wa.send_json({"type": "chat", "text": "segredo do time"})
             assert recv_until(wa, lambda m: m["type"] == "chat")["channel"] == "team"
 
-            # B pergunta, A responde, A chuta certo.
+            # B asks, A answers, A guesses right.
             wb.send_json({"type": "ask", "text": "É mulher?"})
             state(wa, lambda m: m["match"]["phase"] == "answering")
             wa.send_json({"type": "answer", "answer": "yes"})
@@ -107,7 +107,7 @@ def test_full_match_two_players(client):
             sb = state(wb, lambda m: m["room"]["status"] == "match_over")
             assert set(sb["match"]["boards"]) == {"A", "B"}
 
-            # Próxima partida começa com B; depois volta ao lobby.
+            # The next match starts with B; then back to the lobby.
             wa.send_json({"type": "next_match"})
             sa = state(wa, lambda m: m["room"]["status"] == "playing")
             assert sa["match"]["number"] == 2 and sa["match"]["turn_side"] == "B"
@@ -121,7 +121,7 @@ def test_reconnect_replaces_connection_and_host_transfer(client):
         state(wa)
         with client.websocket_connect(url(code, PID_B, "Bruno")) as wb:
             state(wb)
-        # B saiu: continua listado como desconectado.
+        # B left: still listed as disconnected.
         s = state(wa, lambda m: any(p["id"] == PID_B and not p["connected"] for p in m["players"]))
         assert len(s["players"]) == 2
         with client.websocket_connect(url(code, PID_A, "Ana2")) as wa2:
@@ -139,7 +139,7 @@ def test_reconnect_replaces_connection_and_host_transfer(client):
 
 
 def test_timer_task_fires_timeout(client, monkeypatch):
-    """O timer asyncio da sala aplica o timeout quando o relógio passa do deadline."""
+    """The room's asyncio timer applies the timeout when the clock passes the deadline."""
     from app.realtime.manager import manager
 
     fake = {"now": 5_000_000}
@@ -154,7 +154,7 @@ def test_timer_task_fires_timeout(client, monkeypatch):
         s = state(wa, lambda m: m["room"]["status"] == "playing")
         assert s["match"]["deadline"] == 5_000_000 + 45_000
         fake["now"] += 45_000
-        # Qualquer mudança reagenda o timer, que agora dispara imediatamente.
+        # Any change reschedules the timer, which now fires immediately.
         wa.send_json({"type": "flip", "character_id": "ana", "down": True})
         s = state(wa, lambda m: m["match"]["turn_side"] == "B")
         assert s["match"]["log"][-1]["kind"] == "timeout"

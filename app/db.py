@@ -1,4 +1,4 @@
-"""Engine e sessão do SQLAlchemy."""
+"""SQLAlchemy engine and session."""
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -19,7 +19,7 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False
 
 
 def init_db() -> None:
-    from app import models  # noqa: F401  (registra os modelos)
+    from app import models  # noqa: F401  (registers the models)
 
     Base.metadata.create_all(bind=engine)
 

@@ -1,4 +1,4 @@
-"""Aplicação FastAPI do Cara a Cara."""
+"""Guess Who FastAPI application."""
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -31,10 +31,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Cara a Cara", lifespan=lifespan)
 class RevalidatedStaticFiles(StaticFiles):
-    """Arquivos estáticos que o navegador sempre revalida (ETag) antes de usar.
+    """Static files that the browser always revalidates (ETag) before using.
 
-    Sem Cache-Control, navegadores aplicam cache heurístico e podem misturar módulos JS antigos
-    com HTML novo depois de uma atualização, quebrando os imports (página sem reação a cliques).
+    Without Cache-Control, browsers apply heuristic caching and may mix old JS modules
+    with new HTML after an update, breaking the imports (page not reacting to clicks).
     """
 
     async def get_response(self, path, scope):  # type: ignore[override]
@@ -56,7 +56,7 @@ def _ctx_lang(ctx: dict) -> str:
 
 @pass_context
 def _ctx_t(ctx: dict, key: str, **params: object) -> str:
-    """`t(key)` nos templates: texto no idioma da requisição (cookie `lang`, padrão pt)."""
+    """`t(key)` in templates: text in the request language (`lang` cookie, default pt)."""
     return page_text(key, request_lang(ctx.get("request")), **params)
 
 
@@ -75,7 +75,7 @@ _STATUS_MESSAGES = {404: "Não encontrado.", 405: "Método não permitido."}
 @app.exception_handler(StarletteHTTPException)
 async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     detail = exc.detail
-    # Mensagens padrão do Starlette ("Not Found" etc.) viram pt-BR (ou en, pelo cookie `lang`).
+    # Starlette default messages ("Not Found" etc.) become pt-BR (or en, via the `lang` cookie).
     if not isinstance(detail, str) or detail == HTTPStatus(exc.status_code).phrase:
         detail = _STATUS_MESSAGES.get(exc.status_code, "Erro na requisição.")
     detail = tr(detail, request_lang(request))
@@ -87,7 +87,7 @@ async def validation_error(request: Request, exc: RequestValidationError) -> JSO
     return JSONResponse(status_code=422, content={"detail": tr("Dados inválidos na requisição.", request_lang(request))})
 
 
-# ------------------------------------------------------------------ páginas
+# -------------------------------------------------------------------- pages
 @app.get("/", include_in_schema=False)
 def index(request: Request) -> Response:
     return templates.TemplateResponse(request, "index.html", {})

@@ -1,7 +1,7 @@
-"""Regras puras do Cara a Cara (sem I/O).
+"""Pure Guess Who game rules (no I/O).
 
-Toda operação que depende de tempo recebe `now` (epoch em ms) — o relógio é
-injetado pelo chamador. Ações inválidas levantam `GameError` com mensagem em pt-BR.
+Every time-dependent operation receives `now` (epoch in ms): the clock is
+injected by the caller. Invalid actions raise `GameError` with a pt-BR message.
 """
 from __future__ import annotations
 
@@ -29,10 +29,10 @@ STATUS_SERIES_OVER = "series_over"
 
 
 class GameError(Exception):
-    """Ação inválida; `message` é exibida ao usuário."""
+    """Invalid action; `message` is shown to the user."""
 
     def __init__(self, message: str, **params: object) -> None:
-        # `template` é o texto-fonte em pt-BR (chave de tradução em app/i18n.py); `message` já formatado em pt-BR.
+        # `template` is the pt-BR source text (translation key in app/i18n.py); `message` is already formatted in pt-BR.
         text = message.format(**params) if params else message
         super().__init__(text)
         self.template = message
@@ -78,7 +78,7 @@ class Match:
     boards: dict[Side, list[str]] = field(default_factory=lambda: {"A": [], "B": []})
     log: list[dict[str, Any]] = field(default_factory=list)
     winner_side: Side | None = None
-    # Último perguntador/respondedor de cada lado (para o rodízio).
+    # Last asker/answerer of each side (for the rotation).
     last_asker: dict[Side, str | None] = field(default_factory=lambda: {"A": None, "B": None})
     last_answerer: dict[Side, str | None] = field(default_factory=lambda: {"A": None, "B": None})
 
@@ -95,12 +95,12 @@ class Match:
 @dataclass
 class ChatResult:
     channel: str  # room | team | spectators
-    recipients: list[str]  # ids dos jogadores que recebem
+    recipients: list[str]  # ids of the receiving players
     message: dict[str, Any]
 
 
 class Room:
-    """Estado completo de uma sala e da partida em andamento."""
+    """Full state of a room and of the match in progress."""
 
     def __init__(
         self,
@@ -115,7 +115,7 @@ class Room:
         self.host_id: str | None = None
         self.status: str = STATUS_LOBBY
         self.settings = Settings(public=public)
-        self.players: dict[str, Player] = {}  # ordem de inserção = ordem de chegada
+        self.players: dict[str, Player] = {}  # insertion order = arrival order
         self.queue: list[str] = []
         self.score: dict[Side, int] = {"A": 0, "B": 0}
         self.series_winner: Side | None = None
@@ -149,7 +149,7 @@ class Room:
         return [p for p in self.side_players(side) if p.connected]
 
     def _next_in_rotation(self, side: Side, last_id: str | None) -> str | None:
-        """Próximo jogador conectado do lado, depois de `last_id` (circular)."""
+        """Next connected player on the side, after `last_id` (circular)."""
         members = self.side_players(side)
         if not members:
             return None
@@ -162,7 +162,7 @@ class Room:
         return None
 
     def _sync_queue(self) -> None:
-        """No duelo, todo observador está na fila (ordem de chegada preservada)."""
+        """In duel mode, every spectator is in the queue (arrival order preserved)."""
         if self.mode != "duel":
             self.queue = []
             return
@@ -188,7 +188,7 @@ class Room:
     def playing(self) -> bool:
         return self.status == STATUS_PLAYING and self.match is not None and self.match.phase != "over"
 
-    # ------------------------------------------------------------ conexões
+    # --------------------------------------------------------- connections
     def connect(self, player_id: str, name: str, color: str, now: int) -> Player:
         p = self.players.get(player_id)
         if p is None:
@@ -224,7 +224,7 @@ class Room:
                 self.empty_since[side] = None
             elif self.empty_since[side] is None:
                 self.empty_since[side] = now
-        # Rodízio pula quem caiu (ou preenche vaga vazia quando alguém volta).
+        # Rotation skips whoever dropped (or fills an empty seat when someone comes back).
         asking_side = m.turn_side
         if m.phase == "asking":
             asker = self.players.get(m.asker_id) if m.asker_id else None
@@ -248,7 +248,7 @@ class Room:
             raise GameError("Modo inválido.")
         self.mode = mode
         if mode == "duel":
-            # Mantém só o primeiro de cada lado; os demais viram observadores.
+            # Keep only the first player of each side; the others become spectators.
             for side in SIDES:
                 for extra in self.side_players(side)[1:]:
                     extra.side = None
@@ -263,7 +263,7 @@ class Room:
         best_of: Any = None,
         public: Any = None,
     ) -> None:
-        """`theme` = (id, nome) já validado pela camada de I/O."""
+        """`theme` = (id, name), already validated by the I/O layer."""
         self._require_host(player_id)
         self._require_lobby()
         if turn_seconds is not None:
@@ -292,12 +292,12 @@ class Room:
             occupants = self.side_players(side)
             if any(o.connected for o in occupants):
                 raise GameError("Esse lado já está ocupado.")
-            for o in occupants:  # ocupante desconectado perde a vaga
+            for o in occupants:  # a disconnected occupant loses the seat
                 o.side = None
         p.side = side
         self._sync_queue()
 
-    # -------------------------------------------------------------- partida
+    # ---------------------------------------------------------------- match
     def start(self, player_id: str, characters: list[dict[str, str]], now: int) -> None:
         self._require_host(player_id)
         self._require_lobby()
@@ -317,7 +317,7 @@ class Room:
             secrets={"A": a, "B": b},
             turn_side=first,
         )
-        if self.match is not None:  # mantém o rodízio entre partidas
+        if self.match is not None:  # keep the rotation between matches
             m.last_asker = dict(self.match.last_asker)
             m.last_answerer = dict(self.match.last_answerer)
         self.match = m
@@ -447,7 +447,7 @@ class Room:
         self._start_match(characters, now)
 
     def _rotate_duel(self) -> None:
-        """Perdedor vai para o fim da fila; o primeiro conectado da fila assume o lado."""
+        """The loser goes to the end of the queue; the first connected player in the queue takes the side."""
         m = self.match
         assert m is not None and m.winner_side is not None
         self._sync_queue()
@@ -460,7 +460,7 @@ class Room:
             newcomer = self.players[waiting.pop(0)]
             newcomer.side = loser_side
             self.queue.remove(newcomer.id)
-        # Lado vencedor sem ninguém conectado também é preenchido pela fila.
+        # A winning side with nobody connected is also filled from the queue.
         for side in SIDES:
             if not self.side_connected(side) and waiting:
                 for gone in self.side_players(side):
@@ -482,9 +482,9 @@ class Room:
         self.series_winner = None
         self.empty_since = {"A": None, "B": None}
 
-    # ------------------------------------------------------------- relógio
+    # ---------------------------------------------------------------- clock
     def next_wakeup(self) -> int | None:
-        """Próximo instante (ms) em que `tick` pode mudar algo."""
+        """Next instant (ms) at which `tick` may change something."""
         if not self.playing:
             return None
         m = self.match
@@ -495,12 +495,12 @@ class Room:
         return min(times) if times else None
 
     def tick(self, now: int) -> bool:
-        """Aplica timeouts e W.O. vencidos. Retorna True se algo mudou."""
+        """Apply expired timeouts and walkovers. Return True if anything changed."""
         changed = False
         while self.playing:
             m = self.match
             assert m is not None
-            # W.O.: lado sem conectados por 60 s.
+            # Walkover: a side with nobody connected for 60 s.
             expired = [
                 s for s in SIDES
                 if self.empty_since[s] is not None and now - self.empty_since[s] >= WALKOVER_MS
@@ -524,7 +524,7 @@ class Room:
                 })
             else:
                 self._log_question(None, deadline)
-            # Encadeia a partir do deadline (para ticks atrasados).
+            # Chain from the deadline (for late ticks).
             self._begin_turn(other(m.turn_side), deadline)
             changed = True
         return changed
@@ -618,7 +618,7 @@ class Room:
                 "deadline": m.deadline,
                 "pending_question": dict(m.pending_question) if m.pending_question else None,
                 "boards": {s: {"down": list(m.boards[s])} for s in visible},
-                # Quantas cartas cada lado já virou (sem revelar quais).
+                # How many cards each side has flipped (without revealing which).
                 "down_counts": {s: len(m.boards[s]) for s in SIDES},
                 "secrets": {s: m.secrets[s] for s in visible},
                 "log": [dict(e) for e in m.log],
@@ -626,7 +626,7 @@ class Room:
             }
         return snap
 
-    # -------------------------------------------------------------- resumo
+    # -------------------------------------------------------------- summary
     def summary(self) -> dict[str, Any]:
         return {
             "code": self.code,
