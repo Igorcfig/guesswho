@@ -1,4 +1,4 @@
-"""Internacionalização do servidor: páginas, erros da API e do WebSocket em pt (padrão) e en."""
+"""Server internationalisation: pages, API and WebSocket errors in pt (default) and en."""
 from __future__ import annotations
 
 import re
@@ -8,7 +8,7 @@ from tests.conftest import make_png
 
 
 def visible(html: str) -> str:
-    """HTML sem o bloco JSON de textos (que traz os dois idiomas para o cliente)."""
+    """HTML without the JSON block of texts (which carries both languages to the client)."""
     return re.sub(r'<script id="i18n-pages".*?</script>', "", html, flags=re.S)
 
 
@@ -27,7 +27,7 @@ def test_helpers():
 
 
 def test_home_default_pt(client):
-    r = client.get("/", headers={"Accept-Language": "en-US,en;q=0.9"})  # Accept-Language é ignorado
+    r = client.get("/", headers={"Accept-Language": "en-US,en;q=0.9"})  # Accept-Language is ignored
     assert '<html lang="pt-BR"' in r.text
     assert "<title>Cara a Cara · Início</title>" in r.text
     assert "Jogar agora" in r.text and 'aria-label="Português"' in r.text and 'aria-label="English"' in r.text
@@ -37,7 +37,7 @@ def test_home_default_pt(client):
 def test_pages_in_english(client):
     client.cookies.set("lang", "en")
     r = client.get("/")
-    assert "Jogar agora" in r.text  # textos pt embutidos para troca sem recarregar
+    assert "Jogar agora" in r.text  # pt texts embedded for switching without reloading
     shown = visible(r.text)
     assert '<html lang="en"' in r.text
     assert "<title>Cara a Cara · Home</title>" in r.text
@@ -73,14 +73,14 @@ def test_ws_errors_follow_player_lang(client):
         with client.websocket_connect(f"/ws/{code}?player_id={PID_B}&name=Bia&color=%23FFC93C") as wb:
             wb.receive_json()
             wa.receive_json()
-            # Bia (pt, padrão) não é anfitriã.
+            # Bia (pt, default) is not the host.
             wb.send_json({"type": "start"})
             msg = wb.receive_json()
             assert msg == {"type": "error", "message": "Só o anfitrião pode fazer isso."}
-            # Ana (en) pede um tema que não existe.
+            # Ana (en) asks for a theme that does not exist.
             wa.send_json({"type": "set_settings", "theme_id": "nope"})
             assert wa.receive_json() == {"type": "error", "message": "Theme not found."}
-            # Bia troca para en sem reconectar; Ana volta para pt.
+            # Bia switches to en without reconnecting; Ana goes back to pt.
             wb.send_json({"type": "set_lang", "lang": "en"})
             wb.send_json({"type": "start"})
             assert wb.receive_json() == {"type": "error", "message": "Only the host can do that."}
@@ -99,7 +99,7 @@ def test_ws_reconnect_keeps_seat_after_lang_change(client):
         wa.receive_json()
         wa.send_json({"type": "join_side", "side": "A"})
         assert wa.receive_json()["you"]["side"] == "A"
-    # Recarregar a página em inglês reconecta com o mesmo player_id e mantém o lado.
+    # Reloading the page in English reconnects with the same player_id and keeps the side.
     with client.websocket_connect(f"/ws/{code}?player_id={PID_A}&name=Ana&color=%23FFC93C&lang=en") as wa:
         s = wa.receive_json()
         assert s["you"]["side"] == "A" and s["you"]["is_host"] is True

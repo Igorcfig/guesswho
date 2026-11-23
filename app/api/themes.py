@@ -1,4 +1,4 @@
-"""Rotas HTTP de temas (clássico embutido + temas customizados no banco)."""
+"""HTTP routes for themes (built-in classic + custom themes stored in the database)."""
 from __future__ import annotations
 
 import shutil
@@ -35,7 +35,7 @@ class ThemeData:
 
 
 def load_theme(theme_id: str, db: Session | None = None) -> ThemeData | None:
-    """Carrega um tema (clássico ou do banco) pelo id."""
+    """Load a theme (classic or from the database) by id."""
     if theme_id == CLASSIC_ID:
         return ThemeData(CLASSIC_ID, CLASSIC_NAME, CLASSIC_AUTHOR, True, [dict(c) for c in CLASSIC_CHARACTERS])
     own = db is None
@@ -52,7 +52,7 @@ def load_theme(theme_id: str, db: Session | None = None) -> ThemeData | None:
 
 
 def _detect_image(data: bytes) -> str | None:
-    """Detecta o formato pelos bytes mágicos; retorna a extensão."""
+    """Detect the format from the magic bytes; return the extension."""
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
         return "png"
     if data.startswith(b"\xff\xd8\xff"):
@@ -63,7 +63,7 @@ def _detect_image(data: bytes) -> str | None:
 
 
 def _error(request: Request, message: str, **params: Any) -> JSONResponse:
-    """Erro 422 com `detail` no idioma do cookie `lang` (a mensagem-fonte é pt-BR)."""
+    """422 error with `detail` in the language of the `lang` cookie (the source message is pt-BR)."""
     return JSONResponse(status_code=422, content={"detail": tr(message, request_lang(request), **params)})
 
 

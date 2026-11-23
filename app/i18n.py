@@ -1,9 +1,9 @@
-"""Internacionalização do servidor: pt-BR (padrão, fonte dos textos) e inglês.
+"""Server internationalisation: pt-BR (default, source of the texts) and English.
 
-- `MESSAGES`: mensagens do servidor (erros da API e do WebSocket). A chave é o próprio texto em pt-BR
-  (como no gettext); o valor é a tradução em inglês. Textos com `{param}` são formatados por `tr()`.
-- `PAGES`: textos dos templates Jinja (por chave), nos dois idiomas. Também são embutidos no HTML para que o
-  cliente troque de idioma sem recarregar a página.
+- `MESSAGES`: server messages (API and WebSocket errors). The key is the pt-BR text itself
+  (as in gettext); the value is the English translation. Texts with `{param}` are formatted by `tr()`.
+- `PAGES`: Jinja template texts (by key), in both languages. They are also embedded in the HTML so the
+  client can switch language without reloading the page.
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ HTML_LANG = {"pt": "pt-BR", "en": "en"}
 
 
 def normalize(lang: Any) -> str:
-    """Idioma suportado ou o padrão (pt). Aceita "pt-BR", "EN" etc."""
+    """A supported language or the default (pt). Accepts "pt-BR", "EN" etc."""
     if isinstance(lang, str):
         base = lang.strip().lower()[:2]
         if base in SUPPORTED:
@@ -25,21 +25,21 @@ def normalize(lang: Any) -> str:
 
 
 def request_lang(request: Any) -> str:
-    """Idioma da requisição HTTP/WS: só o cookie `lang` (sem Accept-Language; padrão pt)."""
+    """Language of the HTTP/WS request: only the `lang` cookie (no Accept-Language; default pt)."""
     try:
         return normalize(request.cookies.get(COOKIE_NAME))
     except Exception:
         return DEFAULT_LANG
 
 
-# --------------------------------------------------------------- mensagens do servidor
+# --------------------------------------------------------------- server messages
 MESSAGES: dict[str, str] = {
-    # HTTP genérico
+    # Generic HTTP
     "Não encontrado.": "Not found.",
     "Método não permitido.": "Method not allowed.",
     "Erro na requisição.": "Bad request.",
     "Dados inválidos na requisição.": "Invalid request data.",
-    # Salas e temas (API)
+    # Rooms and themes (API)
     "Sala não encontrada.": "Room not found.",
     "Tema não encontrado.": "Theme not found.",
     "Não foi possível ler o formulário enviado.": "Couldn't read the submitted form.",
@@ -54,7 +54,7 @@ MESSAGES: dict[str, str] = {
     "A imagem do personagem {i} não foi enviada.": "Character {i}'s image wasn't sent.",
     "A imagem do personagem {i} passa de 2 MB.": "Character {i}'s image is over 2 MB.",
     "A imagem do personagem {i} precisa ser PNG, JPEG ou WEBP.": "Character {i}'s image must be PNG, JPEG or WEBP.",
-    # WebSocket / regras
+    # WebSocket / rules
     "Identificador de jogador inválido.": "Invalid player ID.",
     "Mensagem inválida.": "Invalid message.",
     "Ação desconhecida.": "Unknown action.",
@@ -89,7 +89,7 @@ MESSAGES: dict[str, str] = {
 
 
 def tr(message: str, lang: str | None = None, **params: Any) -> str:
-    """Traduz uma mensagem do servidor (chave = texto pt-BR) e aplica `params`."""
+    """Translate a server message (key = pt-BR text) and apply `params`."""
     text = MESSAGES.get(message, message) if normalize(lang) == "en" else message
     if params:
         try:
@@ -99,7 +99,7 @@ def tr(message: str, lang: str | None = None, **params: Any) -> str:
     return text
 
 
-# --------------------------------------------------------------- textos das páginas (templates)
+# --------------------------------------------------------------- page texts (templates)
 PAGES: dict[str, dict[str, str]] = {
     "pt": {
         "lang.pt": "Português",
@@ -111,7 +111,7 @@ PAGES: dict[str, dict[str, str]] = {
         "title.home": "Cara a Cara · Início",
         "title.themes": "Cara a Cara · Criar tema",
         "title.room": "Cara a Cara · Sala {code}",
-        # Início
+        # Home
         "home.nav": "Principal",
         "home.how": "Como jogar",
         "home.create_theme": "Criar tema",
@@ -157,7 +157,7 @@ PAGES: dict[str, dict[str, str]] = {
         "rules.r8_t": "Crie seus temas",
         "rules.r8_d": "Jogue com o Clássico ou crie um tema com 12 a 24 fotos da galera em \"Criar tema\".",
         "rules.close": "Bora jogar!",
-        # Editor de temas
+        # Theme editor
         "th.add": "Adicionar fotos",
         "th.save": "Salvar tema",
         "th.h1": "Criar tema",
@@ -176,7 +176,7 @@ PAGES: dict[str, dict[str, str]] = {
         "th.done_another": "Criar outro tema",
         "th.done_home": "Voltar ao início",
         "th.drop_overlay": "Solte as fotos para adicionar",
-        # Sala
+        # Room
         "room.entering": "Entrando na sala {code}…",
         "room.code": "Código da sala",
         "room.copy": "Copiar link",
@@ -392,7 +392,7 @@ PAGES: dict[str, dict[str, str]] = {
 
 
 def page_text(key: str, lang: str | None = None, **params: Any) -> str:
-    """Texto de template por chave, com fallback para pt e para a própria chave."""
+    """Template text by key, falling back to pt and then to the key itself."""
     lang = normalize(lang)
     text = PAGES[lang].get(key) or PAGES[DEFAULT_LANG].get(key) or key
     return text.format(**params) if params else text

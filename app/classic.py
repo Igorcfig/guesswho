@@ -1,4 +1,4 @@
-"""Tema "Clássico" embutido (24 personagens originais)."""
+"""Built-in "Clássico" (Classic) theme (24 original characters)."""
 from __future__ import annotations
 
 CLASSIC_ID = "classic"

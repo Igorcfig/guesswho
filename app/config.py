@@ -1,4 +1,4 @@
-"""Configuração via variáveis de ambiente."""
+"""Configuration via environment variables."""
 from __future__ import annotations
 
 import os
@@ -8,11 +8,11 @@ BASE_DIR = Path(__file__).resolve().parent
 
 
 def _database_url() -> str:
-    """URL do banco.
+    """Database URL.
 
-    Prioridade: DATABASE_URL explícita; senão, se POSTGRES_USER estiver definido, monta a URL do
-    Postgres a partir de POSTGRES_USER/PASSWORD/HOST/PORT/DB com escape correto (a senha pode ter
-    @ : / # etc.); senão, SQLite local para desenvolvimento.
+    Priority: an explicit DATABASE_URL; otherwise, if POSTGRES_USER is set, build the Postgres URL
+    from POSTGRES_USER/PASSWORD/HOST/PORT/DB with proper escaping (the password may contain
+    @ : / # etc.); otherwise, a local SQLite database for development.
     """
     url = os.environ.get("DATABASE_URL")
     if not url and os.environ.get("POSTGRES_USER"):
@@ -27,7 +27,7 @@ def _database_url() -> str:
             database=os.environ.get("POSTGRES_DB", os.environ["POSTGRES_USER"]),
         ).render_as_string(hide_password=False)
     url = url or "sqlite:///./dev.db"
-    # Força o driver psycopg v3 quando vier uma URL postgres "pura".
+    # Force the psycopg v3 driver when a "plain" postgres URL is given.
     if url.startswith("postgres://"):
         url = "postgresql+psycopg://" + url[len("postgres://"):]
     elif url.startswith("postgresql://"):
@@ -39,5 +39,5 @@ DATABASE_URL: str = _database_url()
 UPLOAD_DIR: Path = Path(os.environ.get("UPLOAD_DIR", "./uploads")).resolve()
 TEMPLATES_DIR: Path = BASE_DIR / "templates"
 STATIC_DIR: Path = BASE_DIR / "static"
-# Link do código-fonte exibido na página inicial (forks podem trocar).
+# Source code link shown on the home page (forks can change it).
 REPO_URL: str = os.environ.get("REPO_URL", "https://github.com/Igorcfig/guesswho")

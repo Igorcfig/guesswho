@@ -1,4 +1,4 @@
-"""Gerenciador de salas em memória: conexões WS, broadcast, timers e limpeza."""
+"""In-memory room manager: WS connections, broadcast, timers and cleanup."""
 from __future__ import annotations
 
 import asyncio
@@ -26,12 +26,12 @@ def now_ms() -> int:
 
 
 class RoomSession:
-    """Uma sala viva: estado puro + conexões + tarefas asyncio."""
+    """A live room: pure state + connections + asyncio tasks."""
 
     def __init__(self, room: Room) -> None:
         self.room = room
         self.connections: dict[str, WebSocket] = {}
-        self.langs: dict[str, str] = {}  # idioma das mensagens de erro de cada jogador ("pt"/"en")
+        self.langs: dict[str, str] = {}  # language of each player's error messages ("pt"/"en")
         self.timer_task: asyncio.Task[None] | None = None
         self.cleanup_task: asyncio.Task[None] | None = None
         self.lock = asyncio.Lock()
@@ -44,7 +44,7 @@ class RoomManager:
         self.empty_ttl_s = empty_ttl_s
         self._rng = random.SystemRandom()
 
-    # ------------------------------------------------------------- salas
+    # ------------------------------------------------------------- rooms
     def create_room(self, name: str | None, public: bool) -> Room:
         while True:
             code = "".join(self._rng.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
@@ -54,7 +54,7 @@ class RoomManager:
         room = Room(code=code, name=clean or f"Sala {code}", public=public)
         session = RoomSession(room)
         self.sessions[code] = session
-        self._schedule_cleanup(session)  # sala criada e nunca usada também expira
+        self._schedule_cleanup(session)  # a room created and never used also expires
         return room
 
     def get(self, code: str) -> RoomSession | None:
@@ -67,12 +67,12 @@ class RoomManager:
             if s.room.settings.public and s.room.connected_count() > 0
         ]
 
-    # ---------------------------------------------------------- conexões
+    # ------------------------------------------------------- connections
     async def attach(
         self, session: RoomSession, player_id: str, name: str, color: str, ws: WebSocket, lang: str = DEFAULT_LANG,
     ) -> None:
-        """Registra a conexão (substituindo uma anterior do mesmo jogador)."""
-        session.room.connect(player_id, name, color, self.clock())  # pode levantar GameError
+        """Register the connection (replacing a previous one from the same player)."""
+        session.room.connect(player_id, name, color, self.clock())  # may raise GameError
         session.langs[player_id] = lang
         old = session.connections.get(player_id)
         session.connections[player_id] = ws
@@ -86,20 +86,20 @@ class RoomManager:
 
     async def detach(self, session: RoomSession, player_id: str, ws: WebSocket) -> None:
         if session.connections.get(player_id) is not ws:
-            return  # conexão já substituída
+            return  # connection already replaced
         del session.connections[player_id]
         session.room.disconnect(player_id, self.clock())
         if not session.connections:
             self._schedule_cleanup(session)
         await self.after_change(session)
 
-    # ------------------------------------------------------------ envio
+    # ------------------------------------------------------------ sending
     async def _send(self, ws: WebSocket, payload: dict[str, Any]) -> None:
         if ws.client_state != WebSocketState.CONNECTED:
             return
         try:
             await ws.send_json(payload)
-        except Exception:  # cliente caiu no meio do envio
+        except Exception:  # client dropped mid-send
             log.debug("falha ao enviar para websocket", exc_info=True)
 
     async def send_error(self, ws: WebSocket, message: str) -> None:
@@ -146,7 +146,7 @@ class RoomManager:
             session.cleanup_task.cancel()
         try:
             session.cleanup_task = asyncio.get_running_loop().create_task(self._cleanup(session))
-        except RuntimeError:  # sem loop (ex.: chamada síncrona em testes)
+        except RuntimeError:  # no loop (e.g. synchronous call in tests)
             session.cleanup_task = None
 
     async def _cleanup(self, session: RoomSession) -> None:
@@ -159,12 +159,12 @@ class RoomManager:
                 session.timer_task.cancel()
             del self.sessions[session.room.code]
 
-    # ---------------------------------------------------------- mensagens
+    # ----------------------------------------------------------- messages
     async def handle(self, session: RoomSession, player_id: str, ws: WebSocket, msg: Any) -> None:
-        """Processa uma mensagem do cliente; erros vão só para o remetente."""
+        """Handle a client message; errors go only to the sender."""
         from starlette.concurrency import run_in_threadpool
 
-        from app.api.themes import load_theme  # import tardio evita ciclo
+        from app.api.themes import load_theme  # late import avoids a cycle
 
         room = session.room
         try:

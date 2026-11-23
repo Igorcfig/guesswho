@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Gera os 24 personagens do tema Clássico (SVG) + traits.json.
+"""Generate the 24 characters of the Classic theme (SVG) + traits.json.
 
-Uso: python3 tools/gen_characters.py
-Saída: app/static/characters/classic/<slug>.svg e traits.json
+Usage: python3 tools/gen_characters.py
+Output: app/static/characters/classic/<slug>.svg and traits.json
 """
 import itertools
 import json
@@ -17,7 +17,7 @@ INK = "#1B1446"
 
 BG = ["#FFE7A3", "#BFF0EA", "#FFD3C2", "#DCD3FF", "#FFD0DD", "#D6F5C9"]
 
-SKIN = {  # tom: (pele, sombra)
+SKIN = {  # tone: (skin, shadow)
     1: ("#FCE3CF", "#EFC3A6"),
     2: ("#F3C9A1", "#E2A97E"),
     3: ("#DDA67A", "#C68A5E"),
@@ -27,7 +27,7 @@ SKIN = {  # tom: (pele, sombra)
 }
 SKIN_NAME = {1: "muito clara", 2: "clara", 3: "morena clara", 4: "morena", 5: "escura", 6: "muito escura"}
 
-HAIR = {  # cor: (cabelo, sobrancelha)
+HAIR = {  # colour: (hair, eyebrow)
     "preto": ("#2B2233", "#2B2233"),
     "castanho": ("#7A4A26", "#5E3A1E"),
     "loiro": ("#F2C14E", "#C9962E"),
@@ -54,8 +54,8 @@ HAT = {
     "roxo": ("#8A6CFF", "#6A4FDB"),
 }
 
-# slug, gen, pele, cabelo(cor|None), penteado, barba, bigode, oculos, chapeu, cor_chapeu,
-# brincos, olhos, bochechas, sorriso, camisa, gravata, cor_pelos_faciais(careca)
+# slug, gender, skin, hair (colour|None), hairstyle, beard, moustache, glasses, hat, hat colour,
+# earrings, eyes, cheeks, smile, shirt, tie, facial hair colour (bald)
 C = [
     ("ana", "F", 1, "ruivo", "liso_longo", 0, 0, 0, None, None, 1, "verde", 1, "aberto", "verde", None),
     ("bruno", "M", 4, "preto", "curto", 1, 1, 0, "bone", "vermelho", 0, "castanho", 0, "fechado", "azul", None),
@@ -104,14 +104,14 @@ def arc_points(cx, cy, rx, ry, a0, a1, n):
     return pts
 
 
-# Geometria base
-FCX, FCY, FRX, FRY = 100, 98, 42, 47  # rosto
+# Base geometry
+FCX, FCY, FRX, FRY = 100, 98, 42, 47  # face
 EYE_Y = 100
 EYE_L, EYE_R = 83, 117
 
 
 def hair_back(style, col, hat):
-    """Cabelo atrás da cabeça/ombros."""
+    """Hair behind the head/shoulders."""
     if style == "liso_longo":
         return '<path d="M50 168 C44 140 44 112 46 88 C48 34 152 34 154 88 C156 112 156 140 150 168 C134 176 66 176 50 168 Z" fill="%s"/>' % col
     if style == "cacheado_longo":
@@ -164,7 +164,7 @@ def hat_svg(kind, color):
                 '<path d="M50 74 C70 64 130 64 150 74 C152 82 148 86 140 84 C120 78 80 78 60 84 C52 86 48 82 50 74 Z" fill="%s"/>'
                 '<circle cx="100" cy="34" r="5" fill="%s"/><path d="M100 36 V70" stroke="%s" stroke-width="3" fill="none"/>'
                 % (c, d, d, d))
-    # chapéu
+    # hat
     return ('<ellipse cx="100" cy="68" rx="68" ry="12" fill="%s"/>'
             '<path d="M64 68 C62 40 66 24 100 24 C134 24 138 40 136 68 Z" fill="%s"/>'
             '<path d="M63 56 H137 V66 H63 Z" fill="%s"/>' % (d, c, INK))
@@ -190,18 +190,18 @@ def character(d):
     p.append('<rect width="200" height="200" fill="%s"/>' % d["bg"])
     if hc:
         p.append(hair_back(style, hc, hat))
-    # camisa
+    # shirt
     p.append('<path d="M26 200 C26 160 56 146 100 146 C144 146 174 160 174 200 Z" fill="%s"/>' % shirt)
     p.append('<path d="M70 150 L100 178 L130 150 C120 147 80 147 70 150 Z" fill="%s"/>' % shirt_d)
-    # pescoço
+    # neck
     p.append('<path d="M84 128 H116 V152 L100 170 L84 152 Z" fill="%s"/>' % shade)
     if d["gravata"] == "gravata":
         p.append('<path d="M94 166 L100 160 L106 166 L102 172 L108 200 H92 L98 172 Z" fill="%s"/>' % INK)
     elif d["gravata"] == "borboleta":
         p.append('<path d="M100 166 L82 156 V178 Z M100 166 L118 156 V178 Z" fill="%s"/><circle cx="100" cy="166" r="5" fill="%s"/>' % (INK, INK))
-    # orelhas
+    # ears
     p.append('<circle cx="58" cy="102" r="10" fill="%s"/><circle cx="142" cy="102" r="10" fill="%s"/>' % (skin, skin))
-    # rosto
+    # face
     p.append('<ellipse cx="%d" cy="%d" rx="%d" ry="%d" fill="%s"/>' % (FCX, FCY, FRX, FRY, skin))
     if style == "careca":
         p.append('<ellipse cx="84" cy="64" rx="12" ry="5" fill="#fff" opacity=".35" transform="rotate(-20 84 64)"/>')
@@ -210,14 +210,14 @@ def character(d):
     if d["barba"]:
         p.append('<path fill-rule="evenodd" d="M57 104 C58 160 142 160 143 104 C138 116 132 122 122 120 '
                  'C112 116 88 116 78 120 C68 122 62 116 57 104 Z M100 120 m-17 9 a17 9 0 1 0 34 0 a17 9 0 1 0 -34 0 Z" fill="%s"/>' % fcol)
-    # olhos
+    # eyes
     ec = EYES[d["olhos"]]
     p.append(eye(EYE_L, ec) + eye(EYE_R, ec))
-    # sobrancelhas
+    # eyebrows
     p.append('<path d="M74 85 Q83 80 91 85 M109 85 Q117 80 126 85" stroke="%s" stroke-width="4" stroke-linecap="round" fill="none"/>' % brow)
-    # nariz
+    # nose
     p.append('<path d="M100 104 Q95 114 100 116 Q104 117 106 114" stroke="%s" stroke-width="3" stroke-linecap="round" fill="none"/>' % shade)
-    # boca
+    # mouth
     if d["sorriso"] == "aberto":
         p.append('<path d="M84 126 Q100 128 116 126 Q114 144 100 144 Q86 144 84 126 Z" fill="%s"/>'
                  '<path d="M87 127 Q100 129 113 127 L112 131 Q100 133 88 131 Z" fill="#fff"/>'
@@ -288,7 +288,7 @@ def main():
         json.dump(table, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
 
-    # Relatório de equilíbrio
+    # Balance report
     keys = [k for k in next(iter(table.values())) if k not in ("fundo", "pele_nome")]
     for k in keys:
         cnt = Counter(str(v[k]) for v in table.values())
