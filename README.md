@@ -1,4 +1,4 @@
-# Cara a Cara
+# Guess Who
 
 **An open-source, real-time multiplayer guessing game for the browser.** Ask yes/no questions, flip down
 the faces you have ruled out and be the first to guess your opponent's secret character.
