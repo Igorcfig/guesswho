@@ -1,0 +1,18 @@
+# Configuração de ferramentas (o app não é empacotado; as dependências ficam em requirements*.txt).
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+# E/W: pycodestyle, F: pyflakes, I: ordem dos imports, B: bugbear, UP: pyupgrade
+select = ["E", "W", "F", "I", "B", "UP"]
+ignore = [
+    "E501",  # linhas longas: SVGs e templates inline
+    "B008",  # Depends()/File() em argumentos padrão é o padrão do FastAPI
+    "B905",  # zip() sem strict=: os tamanhos já são validados antes
+    "UP031", # formatação com % no gerador de personagens
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

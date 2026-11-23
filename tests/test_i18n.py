@@ -6,6 +6,7 @@ import re
 from app.i18n import MESSAGES, PAGES, normalize, page_text, tr
 from tests.conftest import make_png
 
+
 def visible(html: str) -> str:
     """HTML sem o bloco JSON de textos (que traz os dois idiomas para o cliente)."""
     return re.sub(r'<script id="i18n-pages".*?</script>', "", html, flags=re.S)
