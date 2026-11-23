@@ -1,9 +1,9 @@
-// Internacionalização do cliente: pt-BR (padrão) e inglês.
-// - `t(key, vars)` procura em DICT (textos do JS) e depois nos textos das páginas embutidos pelo servidor
-//   (<script id="i18n-pages">, vindos de app/i18n.py), com interpolação de `{nome}`.
-// - O idioma fica no cookie `lang` (lido pelo servidor) e no localStorage. Sem escolha salva, é sempre pt.
-// - `setLang()` re-traduz a página sem recarregar ([data-i18n], [data-i18n-html], [data-i18n-attr]) e avisa
-//   quem se inscreveu com `onLangChange()` (cada página re-renderiza o que é dinâmico).
+// Client internationalisation: pt-BR (default) and English.
+// - `t(key, vars)` looks up DICT (JS texts) and then the page texts embedded by the server
+//   (<script id="i18n-pages">, coming from app/i18n.py), interpolating `{name}`.
+// - The language is kept in the `lang` cookie (read by the server) and in localStorage. With no saved choice, it is always pt.
+// - `setLang()` re-translates the page without reloading ([data-i18n], [data-i18n-html], [data-i18n-attr]) and notifies
+//   whoever subscribed with `onLangChange()` (each page re-renders its dynamic parts).
 
 const LANGS = ['pt', 'en'];
 const STORE_KEY = 'cac_lang';
@@ -61,7 +61,7 @@ const DICT = {
     'th.done_public': '"{name}" já aparece na lista de temas das salas. Escolha-o nas configurações do lobby.',
     'th.done_private': '"{name}" é privado: só aparece para você neste navegador e para quem entrar numa sala que o use.',
     'th.saved': 'Tema salvo!',
-    // room.js — conexão
+    // room.js — connection
     'r.invalid_action': 'Ação inválida.',
     'r.other_tab': 'Você abriu esta sala em outra aba ou aparelho. Esta aba foi desconectada.',
     'r.use_tab': 'Usar esta aba',
@@ -113,7 +113,7 @@ const DICT = {
     'r.theme_opt': '{name} · por {author} ({n})',
     'r.my_themes': 'Seus temas',
     'r.chosen_theme': 'Tema escolhido',
-    // partida
+    // match
     'r.preparing': 'Preparando a partida…',
     'r.game_over_w': 'Fim da partida: {phrase}',
     'r.match_ended': 'Partida encerrada',
@@ -178,7 +178,7 @@ const DICT = {
     'log.guess': 'Chute',
     'log.no_ask': 'Não perguntou a tempo.',
     'log.empty': 'Nenhuma pergunta ainda. As perguntas e respostas aparecem aqui.',
-    // observador
+    // spectator
     'r.observing': 'Sala {code} · Você está observando',
     'r.queue_next': 'Você é o próximo da fila',
     'r.queue_nth': 'Você é o {n}º da fila',
@@ -202,7 +202,7 @@ const DICT = {
     // timer
     'r.no_timer': 'Sem cronômetro',
     'r.time_left': 'Tempo restante {n} segundos',
-    // fim
+    // end
     'r.series_over': 'Fim da série',
     'r.match_over_n': 'Fim da partida {n}',
     'r.t_champ_you': 'Você é campeão!',
@@ -236,7 +236,7 @@ const DICT = {
     'chat.unread': '{n} mensagens novas',
     'chat.ch_team': 'time',
     'chat.ch_spec': 'observadores',
-    // apelido
+    // nickname
     'r.name_error': 'Digite um apelido de 1 a 20 caracteres.',
     'r.pick_name': 'Escolha um apelido para entrar.',
     'r.title': 'Cara a Cara · {name}',
@@ -461,12 +461,12 @@ const DICT = {
   },
 };
 
-// Textos das páginas (templates), embutidos pelo servidor a partir de app/i18n.py.
+// Page texts (templates), embedded by the server from app/i18n.py.
 let PAGES = { pt: {}, en: {} };
 try {
   const el = document.getElementById('i18n-pages');
   if (el) PAGES = { ...PAGES, ...JSON.parse(el.textContent) };
-} catch { /* sem textos de página: usa só DICT */ }
+} catch { /* no page texts: use DICT only */ }
 
 function store() {
   try { return window.localStorage; } catch { return null; }
@@ -482,19 +482,19 @@ function readCookie() {
 function writeChoice(lang) {
   try {
     document.cookie = `lang=${lang}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-  } catch { /* cookies bloqueados */ }
-  try { store()?.setItem(STORE_KEY, lang); } catch { /* sem armazenamento */ }
+  } catch { /* cookies blocked */ }
+  try { store()?.setItem(STORE_KEY, lang); } catch { /* no storage */ }
 }
 
 const norm = (l) => (LANGS.includes(l) ? l : null);
 
-// Cookie manda (é o que o servidor usou); senão localStorage; senão pt. Nunca usa o idioma do navegador.
+// The cookie wins (it is what the server used); then localStorage; then pt. Never uses the browser language.
 let current = norm(readCookie()) || (() => { try { return norm(store()?.getItem(STORE_KEY)); } catch { return null; } })() || 'pt';
 
 export function getLang() { return current; }
 export function locale() { return LOCALE[current]; }
 
-/** Traduz `key` no idioma atual, interpolando `{var}`. */
+/** Translate `key` into the current language, interpolating `{var}`. */
 export function t(key, vars) {
   let s = DICT[current]?.[key] ?? PAGES[current]?.[key] ?? DICT.pt[key] ?? PAGES.pt?.[key] ?? key;
   if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : m));
@@ -502,17 +502,17 @@ export function t(key, vars) {
 }
 
 const listeners = new Set();
-/** Registra uma função chamada depois de cada troca de idioma. */
+/** Register a function called after every language switch. */
 export function onLangChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
-/** Aplica o idioma atual aos elementos estáticos marcados com data-i18n*. */
+/** Apply the current language to static elements marked with data-i18n*. */
 export function applyPage(root = document) {
   document.documentElement.lang = HTML_LANG[current];
   document.documentElement.dataset.lang = current;
   const code = document.body?.dataset.code;
   const vars = code ? { code } : undefined;
   root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n, vars); });
-  // Só textos fixos do próprio dicionário (com <br>/<strong>); `code` é validado (A–Z, 2–9).
+  // Only fixed texts from our own dictionary (with <br>/<strong>); `code` is validated (A–Z, 2–9).
   root.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml, vars); });
   root.querySelectorAll('[data-i18n-attr]').forEach((el) => {
     for (const pair of el.dataset.i18nAttr.split(',')) {
@@ -527,7 +527,7 @@ export function applyPage(root = document) {
   });
 }
 
-/** Troca o idioma sem recarregar: salva a escolha, re-traduz a página e avisa as páginas. */
+/** Switch language without reloading: save the choice, re-translate the page and notify the pages. */
 export function setLang(lang) {
   const l = norm(lang);
   if (!l) return;
@@ -545,7 +545,7 @@ document.addEventListener('click', (e) => {
   if (btn) setLang(btn.dataset.langBtn);
 });
 
-// Página renderizada num idioma diferente do salvo (ex.: cookie apagado, localStorage em en): alinha tudo.
+// Page rendered in a language different from the saved one (e.g. cookie cleared, localStorage set to en): align everything.
 if (document.documentElement.dataset.lang !== current) {
   writeChoice(current);
   applyPage();

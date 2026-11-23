@@ -6,7 +6,7 @@
 <div id="conn-status" class="conn-status" role="status" aria-live="polite" hidden></div>
 
 <main id="conteudo">
-  <!-- Carregando -->
+  <!-- Loading -->
   <section id="view-loading" class="view view-loading">
     {% include "_lang_switch.html" %}
     <div class="loading-box">
@@ -123,7 +123,7 @@
     </div>
   </section>
 
-  <!-- ============ PARTIDA (JOGADOR) ============ -->
+  <!-- ============ MATCH (PLAYER) ============ -->
   <section id="view-game" class="view view-game" hidden>
     <header class="game-header">
       <a href="/" class="brand-mini" aria-label="{{ t('brand.back') }}" data-i18n-attr="aria-label:brand.back">
@@ -206,7 +206,7 @@
     </div>
   </section>
 
-  <!-- ============ OBSERVADOR ============ -->
+  <!-- ============ SPECTATOR ============ -->
   <section id="view-spec" class="view view-spec" hidden>
     <header class="game-header">
       <a href="/" class="brand-mini" aria-label="{{ t('brand.back') }}" data-i18n-attr="aria-label:brand.back">
@@ -270,7 +270,7 @@
   </section>
 </main>
 
-<!-- Chat (movido para o painel da visão ativa) -->
+<!-- Chat (moved into the active view's panel) -->
 <div id="chat-box" class="chat">
   <h2 class="chat-title" id="chat-title">{{ t('chat.title') }}</h2>
   <ol id="chat-list" class="chat-list" data-empty="{{ t('chat.empty') }}" data-i18n-attr="data-empty:chat.empty" aria-live="polite" aria-labelledby="chat-title"></ol>
@@ -285,7 +285,7 @@
   </form>
 </div>
 
-<!-- Modal: apelido -->
+<!-- Modal: nickname -->
 <dialog id="name-dialog" class="dialog" aria-labelledby="name-title">
   <form id="name-form" class="dialog-body" method="dialog" novalidate>
     <h2 id="name-title" class="dialog-title" data-i18n="dlg.name_title">{{ t('dlg.name_title') }}</h2>
@@ -303,7 +303,7 @@
   </form>
 </dialog>
 
-<!-- Modal: confirmar chute -->
+<!-- Modal: confirm guess -->
 <dialog id="guess-dialog" class="dialog" aria-labelledby="guess-title">
   <form class="dialog-body center" method="dialog">
     <h2 id="guess-title" class="dialog-title">{{ t('dlg.guess_title') }}</h2>
@@ -316,7 +316,7 @@
   </form>
 </dialog>
 
-<!-- Modal: fim de partida -->
+<!-- Modal: end of match -->
 <dialog id="result-dialog" class="dialog dialog-result" aria-labelledby="result-title">
   <div class="dialog-body center">
     <p class="result-kicker" id="result-kicker"></p>
