@@ -1,13 +1,13 @@
-# Credenciais e portas vêm de um arquivo .env (nunca commitado).
+# Credentials and ports come from a .env file (never committed).
 #   Dev:  cp .env.example .env            && docker compose up --build
-#   Prod: cp .env.example .env.prod (edite) && docker compose --env-file .env.prod up -d --build
+#   Prod: cp .env.example .env.prod (edit) && docker compose --env-file .env.prod up -d --build
 services:
   app:
     build: .
     ports:
       - "${APP_PORT:-8000}:8000"
     environment:
-      # O app monta a URL do banco a partir destas variáveis (com escape: a senha pode ter @ : / #).
+      # The app builds the database URL from these variables (escaped: the password may contain @ : / #).
       POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
       POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
@@ -31,7 +31,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      # $$ evita a interpolação do compose: as variáveis são lidas dentro do container.
+      # $$ avoids compose interpolation: the variables are read inside the container.
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s

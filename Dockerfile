@@ -13,5 +13,5 @@ COPY app ./app
 RUN mkdir -p /data/uploads
 
 EXPOSE 8000
-# 1 worker: o estado das salas vive em memória no processo.
+# 1 worker: room state lives in the process memory.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers"]
