@@ -162,8 +162,9 @@ class RoomManager:
     # ---------------------------------------------------------- mensagens
     async def handle(self, session: RoomSession, player_id: str, ws: WebSocket, msg: Any) -> None:
         """Processa uma mensagem do cliente; erros vão só para o remetente."""
-        from app.api.themes import load_theme  # import tardio evita ciclo
         from starlette.concurrency import run_in_threadpool
+
+        from app.api.themes import load_theme  # import tardio evita ciclo
 
         room = session.room
         try:
