@@ -1,4 +1,4 @@
-/* Cara a Cara — design system (baseado em docs/mock/*.dc.html) */
+/* Guess Who — design system (based on docs/mock/*.dc.html) */
 :root {
   --bg: #1B1446;
   --surface: #2A2160;
@@ -79,7 +79,7 @@ button { font: inherit; }
 .h-sm { font-size: 18px; }
 .lead { font-size: 17px; color: var(--ink-2); }
 
-/* ---------- Marca ---------- */
+/* ---------- Brand ---------- */
 .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--white); text-decoration: none; border-radius: var(--r-sm); }
 .brand:hover { color: var(--white); }
 .brand-logo { width: 44px; height: 44px; display: block; flex-shrink: 0; }
@@ -88,7 +88,7 @@ button { font: inherit; }
 .brand-mini { display: flex; border-radius: var(--r-sm); }
 .brand-mini .brand-logo { width: 40px; height: 40px; }
 
-/* ---------- Botões ---------- */
+/* ---------- Buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 48px; padding: 0 20px; border-radius: 14px; border: none; cursor: pointer;
@@ -131,7 +131,7 @@ button { font: inherit; }
 .btn-dashed:hover:not(:disabled) { background: rgba(255, 255, 255, .06); }
 .btn-dashed:disabled { cursor: default; opacity: .6; border-style: solid; }
 
-/* ---------- Formulários ---------- */
+/* ---------- Forms ---------- */
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field > label, .field-label { font-weight: 800; font-size: 15px; }
 .grow { flex: 1; }
@@ -172,7 +172,7 @@ button { font: inherit; }
 .swatch { width: 30px; height: 30px; border-radius: 10px; border: 3px solid var(--white); box-shadow: 0 0 0 2px var(--input-border); cursor: pointer; padding: 0; }
 .swatch[aria-checked="true"] { box-shadow: 0 0 0 3px var(--ink); transform: scale(1.08); }
 
-/* ---------- Superfícies ---------- */
+/* ---------- Surfaces ---------- */
 .card { background: var(--white); color: var(--ink); border-radius: var(--r-xl); box-shadow: 0 10px 0 var(--shadow); }
 .panel { background: var(--surface); border-radius: var(--r-lg); }
 .panel-white { background: var(--white); color: var(--ink); border-radius: var(--r-lg); }
@@ -242,7 +242,7 @@ button { font: inherit; }
   font-family: var(--font-title); font-weight: 700; font-size: 20px; display: flex; align-items: center; justify-content: center;
 }
 
-/* ================= SALA: geral ================= */
+/* ================= ROOM: general ================= */
 .page-room main { min-height: 100vh; }
 .view-loading { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
 .loading-box { display: flex; flex-direction: column; align-items: center; gap: 16px; font-weight: 800; color: var(--muted-2); }
@@ -321,7 +321,7 @@ button { font: inherit; }
 .chat-form .input { height: 44px; font-size: 14px; }
 .chat-form .btn-icon { width: 44px; height: 44px; }
 
-/* ---------- Cabeçalho da partida ---------- */
+/* ---------- Match header ---------- */
 .view-game, .view-spec { padding: 16px 24px 24px; display: flex; flex-direction: column; gap: 16px; max-width: 1440px; margin: 0 auto; }
 .game-header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
 .room-title { display: flex; flex-direction: column; min-width: 0; }
@@ -343,7 +343,7 @@ button { font: inherit; }
 .timer[data-level="danger"] .timer-num { color: var(--team-b); }
 .timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-title); font-weight: 700; font-size: 22px; }
 
-/* ---------- Layout da partida ---------- */
+/* ---------- Match layout ---------- */
 .game-layout { flex: 1; display: grid; grid-template-columns: 240px minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
 .game-info { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .score-box { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: var(--bg); border-radius: 14px; padding: 10px 12px; }
@@ -419,7 +419,7 @@ button { font: inherit; }
 .ask-form .input { font-size: 15px; }
 .game-panel .chat-list { min-height: 120px; }
 
-/* ---------- Observador ---------- */
+/* ---------- Spectator ---------- */
 .spec-banner { text-align: center; font-weight: 800; color: var(--muted-2); overflow-wrap: anywhere; }
 .score-pill { background: var(--surface); border-radius: 14px; padding: 10px 18px; font-weight: 800; font-size: 16px; display: flex; gap: 14px; align-items: center; max-width: 100%; }
 .score-pill > span:not(.score-num) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -445,7 +445,7 @@ button { font: inherit; }
 .mini-card.is-down { opacity: .3; }
 .mini-card.is-target { outline: 3px solid var(--teal); outline-offset: 1px; opacity: 1; }
 
-/* ---------- Diálogos ---------- */
+/* ---------- Dialogs ---------- */
 .dialog {
   border: none; padding: 0; border-radius: var(--r-xl); background: var(--white); color: var(--ink);
   box-shadow: 0 10px 0 var(--shadow); width: min(92vw, 440px); max-height: 92vh; overflow: auto;
@@ -476,7 +476,7 @@ button { font: inherit; }
 .wait-host { flex-basis: 100%; font-weight: 800; color: var(--ink-3); }
 .result-reopen { position: fixed; right: 20px; bottom: 20px; z-index: 500; }
 
-/* ================= TEMAS ================= */
+/* ================= THEMES ================= */
 .theme-page { padding-bottom: 40px; }
 .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .theme-card, .theme-done { padding: 28px; display: flex; flex-direction: column; gap: 22px; }
@@ -507,7 +507,7 @@ button { font: inherit; }
 .done-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .theme-done:focus { outline: none; }
 
-/* ================= Responsivo ================= */
+/* ================= Responsive ================= */
 @media (max-width: 1180px) {
   .game-layout { grid-template-columns: 220px minmax(0, 1fr); }
   .game-panel { grid-column: 1 / -1; position: static; max-height: none; min-height: 0; }
@@ -581,14 +581,14 @@ button { font: inherit; }
 .conn-btn { height: 34px; margin-left: 8px; vertical-align: middle; }
 .input-code::placeholder { text-transform: none; letter-spacing: normal; font-weight: 700; }
 
-/* Link do repositório (início) */
+/* Repository link (home) */
 .nav-github { display: inline-flex; align-items: center; gap: 6px; }
 .site-footer { padding: 20px 0 28px; color: var(--muted); font-size: 14px; font-weight: 700; }
 .site-footer-inner { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; }
 .site-footer a { text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
 
-/* Seletor de idioma (bandeiras) */
+/* Language switcher (flags) */
 .lang-switch { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .lang-btn {
   display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 36px; padding: 0;
@@ -613,7 +613,7 @@ button { font: inherit; }
   .page-home .site-header .lang-switch { margin-left: auto; }
 }
 
-/* Janela "Como jogar" */
+/* "How to play" dialog */
 .dialog-rules { width: min(94vw, 640px); }
 .rules-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .rules-list li { display: flex; gap: 14px; align-items: flex-start; }

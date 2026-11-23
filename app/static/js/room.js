@@ -1,4 +1,4 @@
-// Sala: lobby, partida (jogador), observador e fim de partida — tudo renderizado a partir do último snapshot `state`.
+// Room: lobby, match (player), spectator and end of match — all rendered from the latest `state` snapshot.
 import {
   getIdentity, saveIdentity, cleanName, colorPicker, api, toast, h, avatar, safeColor,
   getMyThemes, normalizeCode, t, getLang, onLangChange, roomDisplayName, themeDisplayName,
@@ -14,10 +14,10 @@ let me = getIdentity();
 let ws = null;
 let retry = 0;
 let retryTimer = null;
-let S = null; // último snapshot
+let S = null; // latest snapshot
 let everConnected = false;
 
-// ======================== Conexão ========================
+// ======================== Connection ========================
 function wsUrl() {
   const q = new URLSearchParams({ player_id: me.player_id, name: me.name, color: me.color, lang: getLang() });
   return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/${encodeURIComponent(CODE)}?${q}`;
@@ -73,7 +73,7 @@ function scheduleReconnect() {
   retryTimer = setTimeout(connect, delay);
 }
 
-// Aviso de conexão guardado como [chave, vars] para poder ser re-traduzido na troca de idioma.
+// Connection notice stored as [key, vars] so it can be re-translated on a language switch.
 let connMsg = null;
 let connAction = null;
 function setConn(msg, action = null) {
@@ -85,14 +85,14 @@ function setConn(msg, action = null) {
   if (action) el.append(' ', h('button', { type: 'button', class: 'btn btn-white btn-sm conn-btn', onclick: action.onClick }, t(action.label)));
 }
 
-// Texto da tela de carregamento, também como [chave, vars].
+// Loading screen text, also as [key, vars].
 let loadingMsg = ['room.entering', { code: CODE }];
 function setLoading(key, vars) {
   loadingMsg = [key, vars];
   $('loading-text').textContent = t(key, vars);
 }
 
-/** Para de reconectar e mostra um aviso com botão para tentar de novo manualmente. */
+/** Stop reconnecting and show a notice with a button to retry manually. */
 function stopWithMessage(key, label) {
   clearTimeout(retryTimer);
   ws = null;
@@ -111,14 +111,14 @@ function send(obj) {
 
 window.addEventListener('online', () => { if (!ws || ws.readyState > 1) { retry = 0; connect(); } });
 
-// ======================== Helpers de estado ========================
+// ======================== State helpers ========================
 const other = (side) => (side === 'A' ? 'B' : 'A');
 const players = () => (S ? S.players : []);
 const playerById = (id) => players().find((p) => p.id === id);
 const nameOf = (id) => playerById(id)?.name || t('r.someone');
 const isDuel = () => S?.room.mode === 'duel';
 const charById = (id) => S?.match?.characters.find((c) => c.id === id);
-// Entradas `guess` do log trazem o nome chutado em `text` (aceita id também).
+// `guess` log entries carry the guessed name in `text` (an id is accepted too).
 const charByText = (txt) => charById(txt) || S?.match?.characters.find((c) => c.name === txt);
 
 function sideLabel(side, short = false) {
@@ -142,7 +142,7 @@ function showView(v) {
   for (const id of ['loading', 'lobby', 'game', 'spec']) $(`view-${id}`).hidden = id !== v;
 }
 
-// ======================== Render principal ========================
+// ======================== Main render ========================
 let lastView = null;
 function render() {
   const view = currentView();
@@ -195,7 +195,7 @@ function renderLobby() {
   const hostP = playerById(room.host_id);
   $('lobby-host-note').textContent = host ? t('r.you_host') : (hostP ? t('r.host_is', { name: hostP.name }) : '');
 
-  // Modo
+  // Mode
   for (const [id, mode] of [['mode-duel', 'duel'], ['mode-team', 'team']]) {
     const b = $(id);
     b.setAttribute('aria-checked', String(room.mode === mode));
@@ -204,7 +204,7 @@ function renderLobby() {
   }
   $('mode-hint').textContent = t(MODE_HINT[room.mode]) + (host ? '' : t('r.only_host_mode'));
 
-  // Lados
+  // Sides
   for (const side of ['A', 'B']) {
     const members = players().filter((p) => p.side === side);
     $(`side-name-${side}`).textContent = duel ? t(side === 'A' ? 'r.p1' : 'r.p2') : sideLabel(side);
@@ -219,7 +219,7 @@ function renderLobby() {
     else { btn.disabled = false; btn.textContent = duel ? t('r.play_as', { who: t(side === 'A' ? 'r.p1' : 'r.p2') }) : t(side === 'A' ? 'r.join_team_a' : 'r.join_team_b'); }
   }
 
-  // Observadores (no duelo, em ordem de fila)
+  // Spectators (in duel mode, in queue order)
   let watchers = players().filter((p) => !p.side);
   const queue = S.queue || [];
   if (duel) {
@@ -236,7 +236,7 @@ function renderLobby() {
   ob.textContent = you.side ? t('r.become_spec') : t('r.watching');
   $('obs-hint').textContent = duel ? t('r.spec_hint_duel') : t('r.spec_hint_team');
 
-  // Configurações
+  // Settings
   const st = room.settings;
   renderThemeSelect();
   const turn = $('set-turn');
@@ -301,7 +301,7 @@ $('copy-link').addEventListener('click', async () => {
   }
 });
 
-// Temas
+// Themes
 let themes = null;
 let themesLoadedAt = 0;
 async function loadThemes(force = false) {
@@ -311,12 +311,12 @@ async function loadThemes(force = false) {
     const list = await api('/api/themes');
     themes = Array.isArray(list) ? list : [];
     if (S && currentView() === 'lobby') renderThemeSelect();
-  } catch { /* mantém a lista anterior */ }
+  } catch { /* keep the previous list */ }
 }
 
 function renderThemeSelect() {
   const sel = $('set-theme');
-  if (document.activeElement === sel && sel.dataset.sig) return; // não atrapalha quem está escolhendo
+  if (document.activeElement === sel && sel.dataset.sig) return; // do not disturb someone who is choosing
   const st = S.room.settings;
   const pub = themes || [];
   const pubIds = new Set(pub.map((x) => x.id));
@@ -340,7 +340,7 @@ function renderThemeSelect() {
 $('set-theme').addEventListener('focus', () => loadThemes());
 window.addEventListener('focus', () => { if (currentView() === 'lobby') loadThemes(); });
 
-// ======================== Partida (jogador) ========================
+// ======================== Match (player) ========================
 let guessMode = false;
 let boardKey = '';
 const cardEls = new Map();
@@ -423,7 +423,7 @@ function renderGame() {
   secretCard.classList.toggle('secret-card-coral', mySide === 'B');
   setFigure(secretCard, m && charById(m.secrets?.[mySide]));
 
-  // Times
+  // Teams
   const sides = [mySide, other(mySide)];
   $('g-teams').replaceChildren(...sides.map((side) => {
     const mem = players().filter((p) => p.side === side);
@@ -444,7 +444,7 @@ function renderGame() {
   const nWatch = players().filter((p) => !p.side && p.connected).length;
   $('g-watchers').textContent = nWatch ? (nWatch === 1 ? t('r.one_watcher') : t('r.n_watchers', { n: nWatch })) : '';
 
-  // Painel de resposta
+  // Answer panel
   const answering = m && room.status === 'playing' && m.phase === 'answering' && m.answerer_id === me.player_id;
   const ap = $('g-answer');
   ap.hidden = !answering;
@@ -454,14 +454,14 @@ function renderGame() {
     $('g-answer-secret').textContent = charById(m.secrets?.[mySide])?.name || '';
   }
 
-  // Modo chute
+  // Guess mode
   if (guessMode && !canAsk()) guessMode = false;
   $('g-guessbar').hidden = !guessMode;
   $('g-board').classList.toggle('is-guessing', guessMode);
 
   renderBoard(m, mySide);
 
-  // Pergunta / chute
+  // Question / guess
   const ask = canAsk();
   const input = $('ask-input');
   input.disabled = !ask || guessMode;
@@ -618,7 +618,7 @@ function renderLog(list, mySide) {
   list.replaceChildren(...items);
 }
 
-// ======================== Observador ========================
+// ======================== Spectator ========================
 const specBoards = { A: { key: '', els: new Map() }, B: { key: '', els: new Map() } };
 
 function renderSpec() {
@@ -707,7 +707,7 @@ function syncTimer() {
   timerTotal = (S.room.settings.turn_seconds || 45) * 1000;
   if (m.deadline !== lastDeadline) {
     lastDeadline = m.deadline;
-    // Usa a hora do servidor (server_now) para não depender do relógio do cliente.
+    // Use the server time (server_now) so we do not depend on the client clock.
     const ref = S.server_now || Date.now();
     const remaining = Math.max(0, Math.min(timerTotal, m.deadline - ref));
     timerEnd = performance.now() + remaining;
@@ -738,7 +738,7 @@ function tick() {
 }
 setInterval(tick, 250);
 
-// ======================== Fim de partida ========================
+// ======================== End of match ========================
 let dismissedKey = '';
 function renderResult() {
   const dlg = $('result-dialog');
@@ -895,7 +895,7 @@ $('chat-form').addEventListener('submit', (e) => {
   if (send({ type: 'chat', text: text.slice(0, 200) })) input.value = '';
 });
 
-// ======================== Abas ========================
+// ======================== Tabs ========================
 function setupTabs(pairs) {
   const btns = pairs.map(([b]) => $(b));
   pairs.forEach(([btnId, panelId], i) => {
@@ -925,7 +925,7 @@ function setupTabs(pairs) {
 setupTabs([['g-tabbtn-log', 'g-tab-log'], ['g-tabbtn-chat', 'g-tab-chat']]);
 setupTabs([['s-tabbtn-chat', 's-tab-chat'], ['s-tabbtn-log', 's-tab-log']]);
 
-// ======================== Apelido / início ========================
+// ======================== Nickname / start ========================
 function askName() {
   const dlg = $('name-dialog');
   const input = $('name-input');
@@ -960,8 +960,8 @@ function start() {
   loadThemes(true);
 }
 
-// ======================== Idioma ========================
-// Troca sem recarregar: re-renderiza a partir do último snapshot e avisa o servidor (erros no novo idioma).
+// ======================== Language ========================
+// Switch without reloading: re-render from the latest snapshot and tell the server (errors in the new language).
 onLangChange((lang) => {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'set_lang', lang }));
   if (connMsg) setConn(connMsg, connAction);

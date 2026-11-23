@@ -28,7 +28,7 @@ $('avatar-next').addEventListener('click', () => {
 nick.addEventListener('input', () => { me = saveIdentity({ name: nick.value }); });
 $('profile-form').addEventListener('submit', (e) => e.preventDefault());
 
-/** Garante apelido válido antes de entrar numa sala. */
+/** Ensure a valid nickname before joining a room. */
 function requireName() {
   const name = cleanName(nick.value);
   if (!name) {
@@ -92,7 +92,7 @@ codeInput.addEventListener('input', () => {
   try { codeInput.setSelectionRange(pos, pos); } catch { /* ignore */ }
 });
 
-// ---------- Lista de salas públicas ----------
+// ---------- Public room list ----------
 const ROOM_COLORS = ['#FFC93C', '#2EC4B6', '#FF9F5A', '#B8A6FF', '#FF7C9C', '#7EE8DD'];
 function colorFor(code) {
   let n = 0;
@@ -151,7 +151,7 @@ onLangChange(() => {
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) loadRooms(); });
 
-// Aviso vindo de redirect (sala inexistente).
+// Notice coming from a redirect (room does not exist).
 const params = new URLSearchParams(location.search);
 if (params.get('erro') === 'sala_nao_encontrada' || params.get('erro') === 'sala') {
   toast(t('home.room_gone'), 'error', 5000);
@@ -159,7 +159,7 @@ if (params.get('erro') === 'sala_nao_encontrada' || params.get('erro') === 'sala
 }
 if (!me.name) nick.focus();
 
-// "Como jogar": abre as regras completas numa janela (o link #como-jogar fica de reserva sem JS).
+// "Como jogar" (How to play): opens the full rules in a dialog (the #como-jogar link is the no-JS fallback).
 const howDialog = $('how-dialog');
 $('how-open')?.addEventListener('click', (e) => {
   if (!howDialog?.showModal) return;

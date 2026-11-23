@@ -1,4 +1,4 @@
-// Utilidades compartilhadas: identidade do jogador, fetch JSON, toasts e criação segura de elementos.
+// Shared utilities: player identity, JSON fetch, toasts and safe element creation.
 import { t, getLang, onLangChange } from './i18n.js';
 
 export { t, getLang, onLangChange };
@@ -20,7 +20,7 @@ function readJSON(key, fallback) {
 }
 
 function writeJSON(key, value) {
-  try { store()?.setItem(key, JSON.stringify(value)); } catch { /* sem armazenamento: segue só em memória */ }
+  try { store()?.setItem(key, JSON.stringify(value)); } catch { /* no storage: keep it in memory only */ }
 }
 
 function uuid4() {
@@ -33,7 +33,7 @@ function uuid4() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-/** Cor segura: só aceita #RRGGBB; senão usa a primeira da paleta. */
+/** Safe colour: only accepts #RRGGBB; otherwise uses the first one in the palette. */
 export function safeColor(c) {
   return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c) ? c : COLORS[0];
 }
@@ -44,7 +44,7 @@ export function cleanName(name) {
 
 let memoryIdentity = null;
 
-/** Identidade persistente: {player_id, name, color}. Gera player_id na primeira vez. */
+/** Persistent identity: {player_id, name, color}. Generates player_id the first time. */
 export function getIdentity() {
   const saved = readJSON(KEY, null) || memoryIdentity || {};
   let changed = false;
@@ -67,7 +67,7 @@ export function saveIdentity(patch) {
   return { ...cur };
 }
 
-/** Temas criados neste navegador (para achar temas privados no lobby). */
+/** Themes created in this browser (to find private themes in the lobby). */
 export function getMyThemes() {
   const list = readJSON(THEMES_KEY, []);
   return Array.isArray(list) ? list.filter((x) => x && typeof x.id === 'string') : [];
@@ -79,7 +79,7 @@ export function rememberTheme(theme) {
   writeJSON(THEMES_KEY, list.slice(0, 30));
 }
 
-/** Iniciais de um nome (até 2 letras). */
+/** Initials of a name (up to 2 letters). */
 export function initials(name) {
   const parts = String(name || '?').trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -87,8 +87,8 @@ export function initials(name) {
 }
 
 /**
- * Cria um elemento de forma segura. Strings filhas viram nós de texto (nunca HTML).
- * attrs: class, text, dataset, style (objeto), on<evento>, demais atributos via setAttribute.
+ * Create an element safely. Child strings become text nodes (never HTML).
+ * attrs: class, text, dataset, style (object), on<event>, other attributes via setAttribute.
  */
 export function h(tag, attrs = {}, ...children) {
   const el = document.createElement(tag);
@@ -117,7 +117,7 @@ function appendChildren(el, children) {
 }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-/** Ícones de traço (stroke) em SVG, criados por DOM. */
+/** Stroke SVG icons, created via the DOM. */
 const ICONS = {
   link: ['M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1', 'M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1'],
   send: ['M5 12h14M13 6l6 6-6 6'],
@@ -165,12 +165,12 @@ export function icon(name, size = 18, strokeWidth = 2.5) {
   return svg;
 }
 
-/** Quadradinho de avatar com iniciais sobre a cor do jogador. */
+/** Small avatar square with initials on the player's colour. */
 export function avatar(name, color, cls = '') {
   return h('span', { class: `avatar ${cls}`.trim(), style: { background: safeColor(color) }, 'aria-hidden': 'true' }, initials(name));
 }
 
-/** fetch que devolve JSON e lança Error com a mensagem `detail` do servidor. */
+/** fetch that returns JSON and throws an Error with the server's `detail` message. */
 export async function api(path, opts = {}) {
   const init = { ...opts, headers: { Accept: 'application/json', ...(opts.headers || {}) } };
   if (opts.json !== undefined) {
@@ -230,7 +230,7 @@ export function normalizeCode(s) {
   return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
 }
 
-/** Monta o seletor de cores (radiogroup) dentro de `container`. */
+/** Build the colour picker (radiogroup) inside `container`. */
 export function colorPicker(container, current, onChange) {
   container.replaceChildren();
   container.setAttribute('role', 'radiogroup');
@@ -264,12 +264,12 @@ export function colorPicker(container, current, onChange) {
   return { set: (c) => select(c, false) };
 }
 
-/** Nome de sala para exibir: o nome padrão do servidor ("Sala K7Q2") é traduzido. */
+/** Room name for display: the server's default name ("Sala K7Q2") is translated. */
 export function roomDisplayName(name, code) {
   return !name || name === `Sala ${code}` ? t('room.default_name', { code }) : name;
 }
 
-/** Nome de tema para exibir: o tema embutido "Clássico" vira "Classic" em inglês. */
+/** Theme name for display: the built-in "Clássico" theme becomes "Classic" in English. */
 export function themeDisplayName(id, name) {
   return id === 'classic' || (!id && name === 'Clássico') ? t('theme.classic') : (name || '');
 }

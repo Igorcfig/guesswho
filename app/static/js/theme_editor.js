@@ -1,4 +1,4 @@
-// Editor de tema: envia multipart para POST /api/themes.
+// Theme editor: sends multipart to POST /api/themes.
 import {
   getIdentity, saveIdentity, cleanName, api, toast, h, icon, rememberTheme, roomUrl, t, onLangChange,
 } from './common.js';
@@ -193,7 +193,7 @@ $('done-room').addEventListener('click', async (e) => {
   }
 });
 
-// Seleção e arrastar-e-soltar
+// Selection and drag-and-drop
 $('add-files').addEventListener('click', () => fileInput.click());
 dropzone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
